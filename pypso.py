@@ -137,7 +137,7 @@ def main():
     if is_make_ani:
         assert dim == 2
         fig, ax, surf, line = plot_func(func, pso.xs, x_min, x_max, markersize=markersize, is_show=False)
-        make_animation(pso.step, iters, fig, line, verbose, save_path=f"assets/PSO_{func.__name__}.png")
+        make_animation(pso.step, iters, fig, line, verbose, save_path=f"PSO_{func.__name__}.png")
     else:
         t = timeit.timeit(lambda: pso.run(verbose), number=1)
         print("-" * 100)
