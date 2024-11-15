@@ -1,36 +1,67 @@
 #include <iostream>
+#include <ctime>
+#include <cstdlib>
+
 #include "levy.cuh"
+#include "utils.cuh"
 
-int main(){
 
-    size_t num = 8;
-    size_t dim = 2;
+void test_levy_function(
+    size_t num         = 1024,
+    size_t dim         = 500,
+    double tol         = 1e-5,
+    bool   is_show_out = true
+){
 
-    double *xs, *out;
+    double *xs, *out_cpu, *out_cuda;
     double *d_xs, *d_out;
 
-    xs = new double[num * dim];
-    out = new double[num];
-    for (size_t i = 0; i < num * dim; i++) 
-        xs[i] = 1.;
-    for (size_t i = 0; i < num; i++) 
-        out[i] = 0.;
+    srand(time(NULL));
 
-    xs[1 * dim + 0] = 10.; xs[1 * dim + 1] = 5.;
+    xs       = new double[num * dim];
+    out_cpu  = new double[num];
+    out_cuda = new double[num];
+
+    for (size_t i = 0; i < num * dim; i++) 
+        xs[i] = rand_number_();
     
+    levy_function_cpu(xs, out_cpu, num, dim);
+
     cudaMalloc(&d_xs, num * dim * sizeof(double));
     cudaMalloc(&d_out, num * sizeof(double));
     cudaMemcpy(d_xs, xs, num * dim * sizeof(double), cudaMemcpyHostToDevice);
-    cudaMemcpy(d_out, xs, num * sizeof(double), cudaMemcpyHostToDevice);
-
     levy_function_cuda(d_xs, d_out, num, dim);
+    cudaMemcpy(out_cuda, d_out, num * sizeof(double), cudaMemcpyDeviceToHost);
 
-    cudaMemcpy(out, d_out, num * sizeof(double), cudaMemcpyDeviceToHost);
+    if (is_show_out){
+        std::cout << "\nLevy results: (CPU)" << std::endl;
+        for (size_t i = 0; i < num; i++)
+            std::cout << out_cpu[i] << ", ";
+        std::cout << std::endl;
 
-    std::cout << "Levy results:" << std::endl;
-    for (size_t i = 0; i < num; i++)
-        std::cout << out[i] << ", ";
-    std::cout << std::endl;
+        std::cout << "\nLevy results: (CUDA)" << std::endl;
+        for (size_t i = 0; i < num; i++)
+            std::cout << out_cuda[i] << ", ";
+        std::cout << std::endl;
+    }
 
+    bool is_close = true;
+    for (size_t i = 0; i < num; i++){
+        is_close = is_close && abs(out_cpu[i] - out_cuda[i]) < tol;
+    }
+    std::cout << "\nis_close = " << is_close << std::endl;
+
+    cudaFree(d_xs);
+    cudaFree(d_out);
+    delete[] xs;
+    delete[] out_cpu;
+    delete[] out_cuda;
+}
+
+
+int main(){
+
+    test_levy_function();
+    
     return 0;
 }
