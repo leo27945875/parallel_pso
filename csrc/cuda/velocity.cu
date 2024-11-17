@@ -58,7 +58,7 @@ void update_velocities_cuda(
     dim3 grid_dims(num, num_block_per_x);
     dim3 block_dims(BLOCK_DIM_1D);
     update_velocities_kernel<<<grid_dims, block_dims>>>(
-        vs_cuda_ptr, xs_cuda_ptr, local_best_xs_cuda_ptr, global_best_x_cuda_ptr, w, c0, c1, v_max, num, dim, rng_states
+        vs_cuda_ptr, xs_cuda_ptr, local_best_xs_cuda_ptr, global_best_x_cuda_ptr, w, c0, c1, num, dim, rng_states
     );
     cudaCheckErrors("Running 'update_velocities_kernel' failed.");
 }
