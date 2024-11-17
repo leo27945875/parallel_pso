@@ -7,7 +7,7 @@
 
 
 void test_levy_function(
-    size_t num         = 1024,
+    size_t num         = 1000,
     size_t dim         = 500,
     double tol         = 1e-5,
     bool   is_show_out = true
@@ -23,7 +23,7 @@ void test_levy_function(
     out_cuda = new double[num];
 
     for (size_t i = 0; i < num * dim; i++) 
-        xs[i] = rand_number_();
+        xs[i] = rand_number();
     
     levy_function_cpu(xs, out_cpu, num, dim);
 

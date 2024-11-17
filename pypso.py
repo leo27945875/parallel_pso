@@ -17,7 +17,7 @@ class PSO:
         c0    : float                         = 2.,
         c1    : float                         = 2.,
         w_max : float                         = 1.,
-        w_min : float                         = 0.,
+        w_min : float                         = 0.1,
         v_max : float                         = float("inf"),
         x_max : float                         = 5.,
         x_min : float                         = -5.,
@@ -36,9 +36,15 @@ class PSO:
         self.x_min   = x_min
 
         self.xs = np.array([x_min + (x_max - x_min) * np.random.rand(self.dim) for _ in range(n)])
-        self.vs = np.zeros((n, self.dim))
+        self.x_fits = np.zeros(n)
+        self.calc_fitness_vals(self.xs, self.x_fits)
+
         self.local_best_xs = self.xs.copy()
-        self.global_best_x, self.global_best_fit = self.find_global_min()
+        self.local_best_fits = self.x_fits.copy()
+
+        self.global_best_x, self.global_best_fit = self.init_global_info()
+
+        self.vs = np.zeros((n, self.dim))
 
     def run(self, verbose: int = 1) -> tuple[np.ndarray, float]:
         for i in range(self.iters):
@@ -66,17 +72,13 @@ class PSO:
         print(f"Global best point: {[round(float(x), 4) for x in self.global_best_x]}")
         print(f"Global best fitness = {self.global_best_fit}")
 
+    def init_global_info(self) -> tuple[np.ndarray, float]:
+        global_min_idx = np.argmin(self.x_fits)
+        return self.xs[global_min_idx], self.x_fits[global_min_idx]
+
     # To be parallelized:
-    def find_global_min(self) -> tuple[np.ndarray, float]:
-        xs = self.xs
-        min_x, min_f = xs[0], self.func(xs[0])
-        for i in range(1, len(xs)):
-            x = xs[i]
-            f = self.func(x)
-            if f < min_f:
-                min_f = f
-                min_x = x
-        return min_x, min_f
+    def calc_fitness_vals(self, xs: np.ndarray, out) -> None:
+        out[:] = np.apply_along_axis(self.func, 1, xs)
     
     # To be parallelized:
     def update_velocities(self) -> None:
@@ -95,11 +97,11 @@ class PSO:
     
     # To be parallelized:
     def update_bests(self) -> None:
-        curr_fits = np.apply_along_axis(self.func, 1, self.xs)
-        best_fits = np.apply_along_axis(self.func, 1, self.local_best_xs)
-        for i, (x, curr_fit, best_fit) in enumerate(zip(self.xs, curr_fits, best_fits)):
+        self.calc_fitness_vals(self.xs, self.x_fits)
+        for i, (x, curr_fit, best_fit) in enumerate(zip(self.xs, self.x_fits, self.local_best_fits)):
             if curr_fit < best_fit:
                 self.local_best_xs[i] = x.copy()
+                self.local_best_fits[i] = curr_fit
                 if curr_fit < self.global_best_fit:
                     self.global_best_x = x.copy()
                     self.global_best_fit = curr_fit
@@ -111,11 +113,12 @@ class PSO:
 def main():
     seed        = None
     func        = levy_func
-    dim         = 2
-    n           = 50
+    dim         = 10
+    n           = 500
     iters       = 1000
     x_min       = -20
     x_max       = 20.
+    v_max       = 1.
     is_make_ani = False
     markersize  = 4
     verbose     = 1
@@ -131,7 +134,7 @@ def main():
         iters = iters,
         x_min = x_min,
         x_max = x_max,
-        v_max = 0.2
+        v_max = v_max
     )
 
     if is_make_ani:
