@@ -9,7 +9,6 @@ __global__ void update_velocities_kernel(
     double        w,
     double        c0,
     double        c1,
-    double        v_max,
     size_t        num, 
     size_t        dim,
     curandState   *rng_states
