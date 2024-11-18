@@ -1,4 +1,5 @@
 #include "velocity.cuh"
+#include "utils.cuh"
 
 
 __global__ void update_velocities_kernel(
@@ -14,9 +15,7 @@ __global__ void update_velocities_kernel(
     curandState   *rng_states
 ){
     size_t nid = blockIdx.x;
-    size_t bid = blockIdx.y;
-    size_t tid = threadIdx.x;
-    size_t idx = bid * blockDim.x + tid;
+    size_t idx = blockIdx.y * blockDim.x + threadIdx.x;
 
     curandState thread_rng_state = rng_states[nid * dim + idx];
 
@@ -86,7 +85,7 @@ __global__ void update_velocities_with_sum_pow2_kernel(
     }
     if (tid == 0)
         atomicAdd(sum_pow2_res + nid, p_smem[0]);
-    
+
     // Return new rng state:
     rng_states[nid * dim + idx] = thread_rng_state;
 }
@@ -99,10 +98,7 @@ __global__ void norm_clip_velocities_kernel(
     size_t  dim
 ){
     size_t nid = blockIdx.x;
-    size_t bid = blockIdx.y;
-    size_t tid = threadIdx.x;
-    size_t idx = bid * blockDim.x + tid;
-
+    size_t idx = blockIdx.y * blockDim.x + threadIdx.x;
     double norm = sqrt(sum_pow2_res[nid]); // 'Broadcast' mechanism (see https://forums.developer.nvidia.com/t/accessing-same-global-memory-address-within-warps/66574)
     if (norm <= v_max)
         return;

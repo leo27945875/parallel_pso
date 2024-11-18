@@ -1,6 +1,6 @@
 #pragma once
 
-#include "utils.cuh"
+#include <curand_kernel.h>
 
 void update_velocities_cuda(
     double       *vs_cuda_ptr, 
