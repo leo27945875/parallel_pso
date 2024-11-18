@@ -77,7 +77,7 @@ class PSO:
         return self.xs[global_min_idx], self.x_fits[global_min_idx]
 
     # To be parallelized:
-    def calc_fitness_vals(self, xs: np.ndarray, out) -> None:
+    def calc_fitness_vals(self, xs: np.ndarray, out: np.ndarray) -> None:
         out[:] = np.apply_along_axis(self.func, 1, xs)
     
     # To be parallelized:
