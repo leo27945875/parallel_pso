@@ -59,9 +59,37 @@ void test_levy_function(
 }
 
 
+void test_curand(
+    size_t             num    = 10,
+    int                n_loop = 5,
+    unsigned long long seed   = 0
+){
+    double *h_res, *d_res;
+    curandState *d_states;
+    
+    h_res = new double[num];
+    cudaMalloc(&d_res, num * sizeof(double));
+
+    curand_setup(num, seed, &d_states);
+    for (int loop = 0; loop < n_loop; loop++){
+        get_curand_numbers(num, d_states, d_res);
+        cudaMemcpy(h_res, d_res, num * sizeof(double), cudaMemcpyDeviceToHost);
+        std::cout << "cuRAND test:\n";
+        for (size_t i = 0; i < num; i++)
+            std::cout << h_res[i] << ", ";
+        std::cout << std::endl;
+    }
+
+    cudaFree(d_res);
+    cudaFree(d_states);
+    delete[] h_res;
+}
+
+
 int main(){
 
-    test_levy_function();
+    // test_levy_function();
+    test_curand();
     
     return 0;
 }

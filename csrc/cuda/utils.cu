@@ -1,9 +1,18 @@
 #include "utils.cuh"
 
 
-__global__ void init_rng_states_kernel(curandState *states, unsigned long long seed){
+__global__ void init_rng_states_kernel(size_t size, curandState *states, unsigned long long seed){
     size_t idx = blockDim.x * blockIdx.x + threadIdx.x;
-    curand_init(seed, idx, 0, states + idx);
+    if (idx < size)
+        curand_init(seed, idx, 0, states + idx);
+}
+__global__ void get_rand_numbers_kernel(size_t size, curandState *rng_states, double *res){
+    size_t idx = blockDim.x * blockIdx.x + threadIdx.x;
+    if (idx < size){
+        curandState thread_rng_state = rng_states[idx];
+        res[idx] = curand_uniform_double(&thread_rng_state);
+        rng_states[idx] = thread_rng_state;
+    }
 }
 
 __global__ void sum_rows_kernel(double const *xs, double *out, size_t num, size_t dim){
@@ -52,13 +61,17 @@ __global__ void sum_pow2_rows_kernel(double const *xs, double *out, size_t num, 
         atomicAdd(out + nid, smem[0]);
 }
 
-
 __host__ double rand_number(double range){
     return (static_cast<double>(rand()) / RAND_MAX) * (2. * range) - range;
 }
-__host__ void curand_setup(size_t size, unsigned long long seed, curandState **states){
-    cudaMalloc(states, size * sizeof(curandState));
-    init_rng_states_kernel<<<cdiv(size, BLOCK_DIM_1D), BLOCK_DIM_1D>>>(*states, seed);
+__host__ void curand_setup(size_t size, unsigned long long seed, curandState **rng_states){
+    cudaMalloc(rng_states, size * sizeof(curandState));
+    init_rng_states_kernel<<<cdiv(size, BLOCK_DIM_1D), BLOCK_DIM_1D>>>(size, *rng_states, seed);
+    cudaCheckErrors("Running 'init_rng_states_kernel' failed.");
+}
+__host__ void get_curand_numbers(size_t size, curandState *rng_states, double *res){
+    get_rand_numbers_kernel<<<cdiv(size, BLOCK_DIM_1D), BLOCK_DIM_1D>>>(size, rng_states, res);
+    cudaCheckErrors("Running 'get_rand_numbers_kernel' failed.");
 }
 
 
