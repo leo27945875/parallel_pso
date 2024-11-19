@@ -1,17 +1,17 @@
 #include "utils.cuh"
 
 #if (IS_GLOBAL_BEST_USE_ATOMIC)
-    __host__ void cuda_create_mutex(cuda_mutex_t *mutex){
-        cudaMemset(mutex, 0, sizeof(cuda_mutex_t));
-    }
-    __host__ void cuda_destroy_mutex(cuda_mutex_t *mutex){
-        cudaFree(mutex);
-    }
-    __device__ void lock_kernel_mutex(cuda_mutex_t *mutex){
-        while (atomicCAS(mutex, 0, 1) != 0);
-    }
-    __device__ void unlock_kernel_mutex(cuda_mutex_t *mutex){
-        atomicExch(mutex, 0);
+__host__ void cuda_create_mutex(cuda_mutex_t *mutex){
+    cudaMemset(mutex, 0, sizeof(cuda_mutex_t));
+}
+__host__ void cuda_destroy_mutex(cuda_mutex_t *mutex){
+    cudaFree(mutex);
+}
+__device__ void lock_kernel_mutex(cuda_mutex_t *mutex){
+    while (atomicCAS(mutex, 0, 1) != 0);
+}
+__device__ void unlock_kernel_mutex(cuda_mutex_t *mutex){
+    atomicExch(mutex, 0);
     }
 #endif
 

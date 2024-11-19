@@ -40,11 +40,11 @@
 
 // Mutex for kernels:
 #if (IS_GLOBAL_BEST_USE_ATOMIC)
-    typedef int cuda_mutex_t;
-    __host__ void cuda_create_mutex(cuda_mutex_t *mutex);
-    __host__ void cuda_destroy_mutex(cuda_mutex_t *mutex);
-    __device__ void lock_kernel_mutex(cuda_mutex_t *mutex);
-    __device__ void unlock_kernel_mutex(cuda_mutex_t *mutex);
+typedef int cuda_mutex_t;
+__host__ void cuda_create_mutex(cuda_mutex_t *mutex);
+__host__ void cuda_destroy_mutex(cuda_mutex_t *mutex);
+__device__ void lock_kernel_mutex(cuda_mutex_t *mutex);
+__device__ void unlock_kernel_mutex(cuda_mutex_t *mutex);
 #endif
 
 // Other helper functions:

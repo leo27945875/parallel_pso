@@ -4,6 +4,8 @@
 #include "utils.cuh"
 
 
+#if (IS_GLOBAL_BEST_USE_ATOMIC)
+
 __global__ void update_best_fits_atomic_kernel(
     double       *x_fits,
     double       *local_best_fits,
@@ -45,6 +47,8 @@ __global__ void update_best_fits_atomic_kernel(
         unlock_kernel_mutex(mutex);
     }
 }
+
+#endif
 
 __global__ void update_best_fits_reduce_kernel(
     double       *x_fits,
@@ -133,7 +137,7 @@ size_t update_best_fits_cuda(
     cudaMalloc(&global_best_idx_cuda_ptr, sizeof(size_t));
     cudaCheckErrors("Failed to allocate memory buffer to 'global_best_idx_cuda_ptr'.");
 
-    #if (IS_GLOBAL_BEST_USE_ATOMIC)
+#if (IS_GLOBAL_BEST_USE_ATOMIC)
         cuda_mutex_t *mutex;
         cudaMalloc(&mutex, sizeof(cuda_mutex_t)); 
         cuda_create_mutex(mutex);
@@ -142,7 +146,7 @@ size_t update_best_fits_cuda(
         cudaCheckErrors("Failed to run 'update_best_fits_kernel'.");
         cuda_destroy_mutex(mutex);
         cudaCheckErrors("Failed to destroy kernel mutex.");
-    #else
+#else
         if (num_block_1d == 1){
             update_best_fits_reduce_kernel<<<1, BLOCK_DIM_1D>>>(x_fits_cuda_ptr, local_best_fits_cuda_ptr, global_best_fit_cuda_ptr, global_best_idx_cuda_ptr, num);
             cudaCheckErrors("Failed to run 'update_best_fits_reduce_kernel'.");
@@ -158,7 +162,7 @@ size_t update_best_fits_cuda(
             cudaFree(part_global_best_fits_cuda_ptr); cudaCheckErrors("Failed to free 'part_global_best_fits_cuda_ptr'.");
             cudaFree(part_global_best_idxs_cuda_ptr); cudaCheckErrors("Failed to free 'part_global_best_idxs_cuda_ptr'.");
         }
-    #endif
+#endif
 
     cudaMemcpy(&global_best_idx, global_best_idx_cuda_ptr, sizeof(size_t), cudaMemcpyDeviceToHost);
     cudaCheckErrors("Failed to copy data from 'global_best_idx_cuda_ptr'.");
@@ -177,7 +181,7 @@ void update_bests_cuda(
     size_t        num,
     size_t        dim
 ){
-    update_best_fits_cuda(x_fits_cuda_ptr, local_best_fits_cuda_ptr, global_best_fit_cuda_ptr, num);
+    size_t global_best_idx = update_best_fits_cuda(x_fits_cuda_ptr, local_best_fits_cuda_ptr, global_best_fit_cuda_ptr, num);
 
     // size_t num_block_per_x = get_num_block_1d(dim);
     // dim3 grid_dims(num, num_block_per_x);
