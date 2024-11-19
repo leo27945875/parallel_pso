@@ -7,7 +7,7 @@ void update_velocities_cuda(
     double const *xs_cuda_ptr, 
     double const *local_best_xs_cuda_ptr, 
     double const *global_best_x_cuda_ptr,
-    double       *sum_pow2_res,
+    double       *v_sum_pow2_cuda_ptr,
     double        w,
     double        c0,
     double        c1,

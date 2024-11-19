@@ -23,18 +23,18 @@ __global__ void update_positions_kernel(
 }
 
 void update_positions_cuda(
-    double       *xs,
-    double const *vs,
+    double       *xs_cuda_ptr,
+    double const *vs_cuda_ptr,
     double        x_min,
     double        x_max,
     size_t        num,
     size_t        dim
 ){
-    size_t num_block_per_x = get_num_block_per_x(dim);
+    size_t num_block_per_x = get_num_block_1d(dim);
     dim3 grid_dims(num, num_block_per_x);
     dim3 block_dims(BLOCK_DIM_1D);
     update_positions_kernel<<<grid_dims, block_dims>>>(
-        xs, vs, x_min, x_max, num, dim
+        xs_cuda_ptr, vs_cuda_ptr, x_min, x_max, num, dim
     );
     cudaCheckErrors("Running 'update_positions_kernel' failed.");
 }

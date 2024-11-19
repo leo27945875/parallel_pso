@@ -49,7 +49,7 @@ __global__ void levy_function_kernel(double const *xs, double *out, size_t num, 
 }
 
 void levy_function_cuda(double const *xs_cuda_ptr, double *out_cuda_ptr, size_t num, size_t dim){
-    size_t num_block_per_x = get_num_block_per_x(dim);
+    size_t num_block_per_x = get_num_block_1d(dim);
     dim3 grid_dims(num, num_block_per_x);
     dim3 block_dims(BLOCK_DIM_1D);
     levy_function_kernel<<<grid_dims, block_dims>>>(xs_cuda_ptr, out_cuda_ptr, num, dim); 
