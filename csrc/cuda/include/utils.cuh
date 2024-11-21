@@ -1,6 +1,6 @@
 #pragma once
 
-#include <stdio.h>
+#include <cstdio>
 #include <cstdlib>
 #include <curand.h>
 #include <curand_kernel.h>
