@@ -5,9 +5,8 @@
 
 
 #if (IS_GLOBAL_BEST_USE_ATOMIC)
-
 __global__ void update_best_fits_atomic_kernel(
-    double       *x_fits,
+    double const *x_fits,
     double       *local_best_fits,
     double       *glboal_best_fit,
     size_t       *global_best_idx,
@@ -29,7 +28,7 @@ __global__ void update_best_fits_atomic_kernel(
             global_best_idxs_smem[tid] = i;
         }
     }
-    for (size_t k = blockDim.x / 2; k > 0; k >>= 1){
+    for (size_t k = blockDim.x >> 1; k > 0; k >>= 1){
         __syncthreads();
         if (tid < k){
             if (glboal_best_fits_smem[tid + k] < glboal_best_fits_smem[tid]){
@@ -48,10 +47,10 @@ __global__ void update_best_fits_atomic_kernel(
     }
 }
 
-#endif
+#else
 
 __global__ void update_best_fits_reduce_kernel(
-    double       *x_fits,
+    double const *x_fits,
     double       *local_best_fits,
     double       *glboal_best_fits,
     size_t       *global_best_idxs,
@@ -73,7 +72,7 @@ __global__ void update_best_fits_reduce_kernel(
             global_best_idxs_smem[tid] = i;
         }
     }
-    for (size_t k = blockDim.x / 2; k > 0; k >>= 1){
+    for (size_t k = blockDim.x >> 1; k > 0; k >>= 1){
         __syncthreads();
         if (tid < k){
             if (glboal_best_fits_smem[tid + k] < glboal_best_fits_smem[tid]){
@@ -109,7 +108,7 @@ __global__ void argmin_global_fits_reduce_kernel(
             global_best_idxs_smem[tid] = part_idx;
         }
     }
-    for (size_t k = blockDim.x / 2; k > 0; k >>= 1){
+    for (size_t k = blockDim.x >> 1; k > 0; k >>= 1){
         if (tid < k){
             if (glboal_best_fits_smem[tid + k] < glboal_best_fits_smem[tid]){
                 glboal_best_fits_smem[tid] = glboal_best_fits_smem[tid + k];
@@ -123,12 +122,33 @@ __global__ void argmin_global_fits_reduce_kernel(
     }
 }
 
+#endif
+
+__global__ void assign_local_best_xs(
+    double const *xs,
+    double const *x_fits,
+    double       *local_best_xs,
+    double const *local_best_fits,
+    size_t        num,
+    size_t        dim
+){
+    size_t nid = blockIdx.x;
+    size_t idx = blockDim.x * blockIdx.y + threadIdx.x;
+
+    if (x_fits[nid] > local_best_fits[nid])
+        return;
+
+    for (size_t i = idx; i < dim; i += gridDim.y * blockDim.x){
+        local_best_xs[nid * dim + i] = xs[nid * dim + i];
+    }
+}
+
 
 size_t update_best_fits_cuda(
-    double *x_fits_cuda_ptr,
-    double *local_best_fits_cuda_ptr,
-    double *global_best_fit_cuda_ptr,
-    size_t  num
+    double const *x_fits_cuda_ptr,
+    double       *local_best_fits_cuda_ptr,
+    double       *global_best_fit_cuda_ptr,
+    size_t        num
 ){
     size_t num_block_1d = get_num_block_1d(num);
     size_t global_best_idx;
@@ -139,10 +159,9 @@ size_t update_best_fits_cuda(
 
 #if (IS_GLOBAL_BEST_USE_ATOMIC)
         cuda_mutex_t *mutex;
-        cudaMalloc(&mutex, sizeof(cuda_mutex_t)); 
-        cuda_create_mutex(mutex);
+        cuda_create_mutex(&mutex);
         cudaCheckErrors("Failed to create kernel mutex.");
-        update_best_fits_atomic_kernel<<<num_block_1d, BLOCK_DIM_1D>>>(x_fits_cuda_ptr, local_best_fits_cuda_ptr, glboal_best_fit_cuda_ptr, global_best_idx_cuda_ptr, num, mutex);
+        update_best_fits_atomic_kernel<<<num_block_1d, BLOCK_DIM_1D>>>(x_fits_cuda_ptr, local_best_fits_cuda_ptr, global_best_fit_cuda_ptr, global_best_idx_cuda_ptr, num, mutex);
         cudaCheckErrors("Failed to run 'update_best_fits_kernel'.");
         cuda_destroy_mutex(mutex);
         cudaCheckErrors("Failed to destroy kernel mutex.");
@@ -171,9 +190,9 @@ size_t update_best_fits_cuda(
     return global_best_idx;
 }
 
-void update_bests_cuda(
+size_t update_bests_cuda(
     double const *xs_cuda_ptr,
-    double       *x_fits_cuda_ptr,
+    double const *x_fits_cuda_ptr,
     double       *local_best_xs_cuda_ptr,
     double       *local_best_fits_cuda_ptr,
     double       *global_best_x_cuda_ptr,
@@ -181,9 +200,17 @@ void update_bests_cuda(
     size_t        num,
     size_t        dim
 ){
+    // Update the local & global best fitnesses and find the index of the global best x:
     size_t global_best_idx = update_best_fits_cuda(x_fits_cuda_ptr, local_best_fits_cuda_ptr, global_best_fit_cuda_ptr, num);
 
-    // size_t num_block_per_x = get_num_block_1d(dim);
-    // dim3 grid_dims(num, num_block_per_x);
-    // dim3 block_dims(BLOCK_DIM_1D);
+    // Assign the local best xs according to the updated local best fitnesses:
+    dim3 grid_dims(num, get_num_block_1d(dim));
+    dim3 block_dims(BLOCK_DIM_1D);
+    assign_local_best_xs<<<grid_dims, block_dims>>>(xs_cuda_ptr, x_fits_cuda_ptr, local_best_xs_cuda_ptr, local_best_fits_cuda_ptr, num, dim);
+    cudaCheckErrors("Fail to run 'assign_local_best_xs'.");
+
+    // Assign the global best x according to the index of the global best x:
+    cudaMemcpy(global_best_x_cuda_ptr, xs_cuda_ptr + global_best_idx * dim, dim * sizeof(double), cudaMemcpyDeviceToDevice);
+    cudaCheckErrors("Fail to copy global best x.");
+    return global_best_idx;
 }

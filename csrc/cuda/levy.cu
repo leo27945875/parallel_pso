@@ -39,7 +39,7 @@ __global__ void levy_function_kernel(double const *xs, double *out, size_t num, 
             smem[tid] += levy_middle_func(x);
     }
     
-    for (size_t k = blockDim.x / 2; k > 0; k >>= 1){
+    for (size_t k = blockDim.x >> 1; k > 0; k >>= 1){
         __syncthreads();
         if (tid < k)
             smem[tid] += smem[tid + k];

@@ -1,6 +1,6 @@
 #pragma once
 
-#include <curand_kernel.h>
+#include "utils.cuh"
 
 void update_velocities_cuda(
     double       *vs_cuda_ptr, 
@@ -14,5 +14,5 @@ void update_velocities_cuda(
     double        v_max,
     size_t        num, 
     size_t        dim,
-    curandState   *rng_states
+    cuda_rng_t   *rng_states
 );

@@ -30,8 +30,7 @@ void update_positions_cuda(
     size_t        num,
     size_t        dim
 ){
-    size_t num_block_per_x = get_num_block_1d(dim);
-    dim3 grid_dims(num, num_block_per_x);
+    dim3 grid_dims(num, get_num_block_1d(dim));
     dim3 block_dims(BLOCK_DIM_1D);
     update_positions_kernel<<<grid_dims, block_dims>>>(
         xs_cuda_ptr, vs_cuda_ptr, x_min, x_max, num, dim
