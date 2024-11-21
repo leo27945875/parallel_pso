@@ -101,7 +101,7 @@ __host__ void get_curand_numbers(size_t size, cuda_rng_t *rng_states, double *re
 __host__ void print_matrix(double const *mat, size_t nrow, size_t ncol){
     for (size_t i = 0; i < nrow; i++){
         for (size_t j = 0; j < ncol; j++)
-            printf("% 3.4f, ", mat[i * ncol + j]);
+            printf("% 8.4f, ", mat[i * ncol + j]);
         printf("\n");
     }
 }

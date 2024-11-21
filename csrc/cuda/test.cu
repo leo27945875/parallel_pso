@@ -5,6 +5,7 @@
 
 #include "levy.cuh"
 #include "velocity.cuh"
+#include "position.cuh"
 #include "evolve.cuh"
 #include "utils.cuh"
 
@@ -141,7 +142,7 @@ void test_levy_function(
 }
 
 
-void test_velocity(
+void test_update_velocity(
     size_t             num            = 10,
     size_t             dim            = 500,
     double             v_max          = 1.,
@@ -212,6 +213,51 @@ void test_velocity(
     delete[] h_local_best_xs;
     delete[] h_global_best_x;
     delete[] h_norm_buffer;
+}
+
+
+void test_update_position(
+    size_t num   = 10,
+    size_t dim   = 500,
+    double x_min = -7.,
+    double x_max = 7.
+){
+    double *h_xs, *h_vs;
+    double *d_xs, *d_vs;
+
+    h_xs = new double[num * dim];
+    h_vs = new double[num * dim];
+
+    memset(h_xs, 0, num * dim * sizeof(double));
+    for (size_t i = 0; i < num; i++){
+        for (size_t j = 0; j < dim; j++){
+            h_vs[i * dim + j] = -static_cast<double>(num) + 2 * static_cast<double>(i);
+        }
+    }
+
+    std::cout << "Before:\n";
+    std::cout << "xs:\n"    ; print_matrix(h_xs, num, dim);
+    std::cout << "vs:\n"    ; print_matrix(h_vs, num, dim);
+    std::cout << std::endl;
+
+    cudaMalloc(&d_xs, num * dim * sizeof(double));
+    cudaMalloc(&d_vs, num * dim * sizeof(double));
+
+    cudaMemcpy(d_xs, h_xs, num * dim * sizeof(double), cudaMemcpyHostToDevice);
+    cudaMemcpy(d_vs, h_vs, num * dim * sizeof(double), cudaMemcpyHostToDevice);
+
+    update_positions_cuda(d_xs, d_vs, x_min, x_max, num, dim);
+
+    cudaMemcpy(h_xs, d_xs, num * dim * sizeof(double), cudaMemcpyDeviceToHost);
+    cudaMemcpy(h_vs, d_vs, num * dim * sizeof(double), cudaMemcpyDeviceToHost);
+
+    std::cout << "After:\n";
+    std::cout << "xs:\n"   ; print_matrix(h_xs, num, dim);
+
+    cudaFree(d_xs);
+    cudaFree(d_vs);
+    delete[] h_xs;
+    delete[] h_vs;
 }
 
 
@@ -330,8 +376,9 @@ int main(){
     // test_mutex();
     // test_curand();
     // test_levy_function();
-    // test_velocity();
-    test_update_best();
+    // test_update_velocity();
+    test_update_position();
+    // test_update_best();
     cudaDeviceSynchronize();
     return 0;
 }
