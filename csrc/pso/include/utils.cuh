@@ -8,12 +8,13 @@
 #define MAX_NUM_BLOCK_1D 128UL
 #define BLOCK_DIM_1D     256UL
 
+#define IS_TESTING                0
 #define IS_CHECK_CUDA_ERROR       1
 #define IS_VELOVITY_USE_RANDOM    1
 #define IS_GLOBAL_BEST_USE_ATOMIC 1
 
 // Error checking macro
-#if (IS_CHECK_CUDA_ERROR)
+#if IS_CHECK_CUDA_ERROR
     #define cudaCheckErrors(msg) \
         do { \
             cudaError_t __err = cudaGetLastError(); \

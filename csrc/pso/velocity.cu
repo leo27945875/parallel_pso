@@ -26,7 +26,7 @@ __global__ void update_velocities_kernel(
         double gbest_x = global_best_x[i];
 
         // Update velocities:
-#if (IS_VELOVITY_USE_RANDOM)
+#if IS_VELOVITY_USE_RANDOM
         cuda_rng_t thread_rng_state = rng_states[nid * dim + i];
         vs[nid * dim + i] = (
             w * v + 
@@ -73,7 +73,7 @@ __global__ void update_velocities_with_sum_pow2_kernel(
         double gbest_x = global_best_x[i];
 
         // Calculate new velocities:
-#if (IS_VELOVITY_USE_RANDOM)
+#if IS_VELOVITY_USE_RANDOM
         cuda_rng_t thread_rng_state = rng_states[nid * dim + idx];
         v = (
             w * v + 

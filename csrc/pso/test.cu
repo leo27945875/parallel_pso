@@ -1,3 +1,5 @@
+#if IS_TESTING
+
 #include <iostream>
 #include <ctime>
 #include <cfloat>
@@ -377,8 +379,10 @@ int main(){
     // test_curand();
     // test_levy_function();
     // test_update_velocity();
-    test_update_position();
+    // test_update_position();
     // test_update_best();
     cudaDeviceSynchronize();
     return 0;
 }
+
+#endif

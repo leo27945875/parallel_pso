@@ -4,7 +4,7 @@
 #include "utils.cuh"
 
 
-#if (IS_GLOBAL_BEST_USE_ATOMIC)
+#if IS_GLOBAL_BEST_USE_ATOMIC
 __global__ void update_best_fits_atomic_kernel(
     double const *x_fits,
     double       *local_best_fits,
@@ -157,7 +157,7 @@ size_t update_best_fits_cuda(
     cudaMalloc(&global_best_idx_cuda_ptr, sizeof(size_t));
     cudaCheckErrors("Failed to allocate memory buffer to 'global_best_idx_cuda_ptr'.");
 
-#if (IS_GLOBAL_BEST_USE_ATOMIC)
+#if IS_GLOBAL_BEST_USE_ATOMIC
         cuda_mutex_t *mutex;
         cuda_create_mutex(&mutex);
         cudaCheckErrors("Failed to create kernel mutex.");
