@@ -17,12 +17,12 @@ enum class Device {
 class Buffer 
 {
 public:
-    Buffer            () = delete;
-    Buffer            (size_t nrow, size_t ncol, Device device);
-    Buffer            (Buffer const  &other);                        // copy ctor
-    Buffer            (Buffer       &&other) noexcept;               // move ctor
-    Buffer & operator=(Buffer const  &other);                        // copy assignment
-    Buffer & operator=(Buffer       &&other) noexcept;               // move assignment
+    Buffer            () = delete                                       ;
+    Buffer            (size_t nrow, size_t ncol, Device device)         ;
+    Buffer            (Buffer const  &other)                            ;  // copy ctor
+    Buffer            (Buffer       &&other)                    noexcept;  // move ctor
+    Buffer & operator=(Buffer const  &other)                            ;  // copy assignment
+    Buffer & operator=(Buffer       &&other)                    noexcept;  // move assignment
     ~Buffer           ();
 
     double set_value (size_t row, size_t col, double val)      ;
