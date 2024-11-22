@@ -71,10 +71,10 @@ double Buffer::set_value(size_t row, size_t col, double val) {
     switch (m_device)
     {
     case Device::CPU:
-        m_buffer[row * m_ncol + col] = val;
+        m_buffer[index_at(row, col)] = val;
         break;
     case Device::GPU:
-        cudaMemcpy(m_buffer + row * m_ncol + col, &val, sizeof(double), cudaMemcpyHostToDevice);
+        cudaMemcpy(m_buffer + index_at(row, col), &val, sizeof(double), cudaMemcpyHostToDevice);
         break;
     }
 }
@@ -83,10 +83,10 @@ double Buffer::get_value(size_t row, size_t col) const {
     switch (m_device)
     {
     case Device::CPU:
-        res = m_buffer[row * m_ncol + col];
+        res = m_buffer[index_at(row, col)];
         break;
     case Device::GPU:
-        cudaMemcpy(&res, m_buffer + row * m_ncol + col, sizeof(double), cudaMemcpyDeviceToHost);
+        cudaMemcpy(&res, m_buffer + index_at(row, col), sizeof(double), cudaMemcpyDeviceToHost);
         break;
     }
     return res;
@@ -113,13 +113,16 @@ size_t Buffer::num_elem() const {
 size_t Buffer::buffer_size() const {
     return m_nrow * m_ncol * sizeof(double);
 }
+size_t Buffer::index_at(size_t row, size_t col) const {
+    return row * m_ncol + col;
+}
 bool Buffer::is_same_shape(Buffer const &other) const {
     return m_nrow == other.nrow() && m_ncol == other.ncol();
 }
 bool Buffer::is_same_device(Buffer const &other) const {
     return m_device == other.device();
 }
-void Buffer::copy_to_numpy (ndarray_t out) const {
+void Buffer::copy_to_numpy(ndarray_t out) const {
     // TODO
 }
 
