@@ -122,9 +122,6 @@ bool Buffer::is_same_shape(Buffer const &other) const {
 bool Buffer::is_same_device(Buffer const &other) const {
     return m_device == other.device();
 }
-void Buffer::copy_to_numpy(ndarray_t out) const {
-    // TODO
-}
 
 void Buffer::to(Device device){
     if (m_device == device)
@@ -171,6 +168,24 @@ void Buffer::_release(){
         break;
     case Device::GPU:
         cudaFree(m_buffer);
+        break;
+    }
+}
+
+void Buffer::copy_to_numpy(ndarray_t out) const {
+    size_t buf_buffer_size = buffer_size();
+    size_t npy_buffer_size = out.nbytes();
+
+    if (npy_buffer_size != buf_buffer_size)
+        throw std::runtime_error("Size of numpy array does not match this buffer.");
+    
+    switch (m_device)
+    {
+    case Device::CPU:
+        memcpy(out.mutable_data(), m_buffer, buf_buffer_size);
+        break;
+    case Device::GPU:
+        cudaMemcpy(out.mutable_data(), m_buffer, buf_buffer_size, cudaMemcpyDeviceToHost);
         break;
     }
 }
