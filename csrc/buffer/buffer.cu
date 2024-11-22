@@ -1,11 +1,14 @@
+#include <sstream>
 #include <algorithm>
 #include <stdexcept>
 #include <thrust/fill.h>
+#include <thrust/device_ptr.h>
 
 #include "buffer.cuh"
+#include "utils.cuh"
 
 
-Buffer::Buffer(size_t nrow, size_t ncol, Device device)
+Buffer::Buffer(ssize_t nrow, ssize_t ncol, Device device)
     : m_nrow(nrow), m_ncol(ncol), m_device(device)
 {
     switch (m_device)
@@ -14,7 +17,8 @@ Buffer::Buffer(size_t nrow, size_t ncol, Device device)
         m_buffer = new double[num_elem()];
         break;
     case Device::GPU:
-        cudaMalloc(&m_buffer, buffer_size());
+        cudaMalloc(&m_buffer, buffer_size()); 
+        cudaCheckErrors("Failed to allocate GPU buffer.");
         break;
     }
 }
@@ -55,6 +59,7 @@ Buffer & Buffer::operator=(Buffer const &other){
         cudaMemcpy(m_buffer, other.m_buffer, buffer_size(), cudaMemcpyDeviceToDevice);
         break;
     }
+    return *this;
 }
 Buffer & Buffer::operator=(Buffer &&other) noexcept {
     _release();
@@ -62,12 +67,13 @@ Buffer & Buffer::operator=(Buffer &&other) noexcept {
     m_nrow   = other.m_nrow;
     m_ncol   = other.m_ncol;
     m_device = other.m_device;
+    return *this;
 }
 Buffer::~Buffer(){
     _release();
 }
 
-double Buffer::set_value(size_t row, size_t col, double val) {
+void Buffer::set_value(ssize_t row, ssize_t col, double val) {
     switch (m_device)
     {
     case Device::CPU:
@@ -78,7 +84,7 @@ double Buffer::set_value(size_t row, size_t col, double val) {
         break;
     }
 }
-double Buffer::get_value(size_t row, size_t col) const {
+double Buffer::get_value(ssize_t row, ssize_t col) const {
     double res;
     switch (m_device)
     {
@@ -91,29 +97,32 @@ double Buffer::get_value(size_t row, size_t col) const {
     }
     return res;
 }
-double Buffer::operator()(size_t row, size_t col) const {
+double Buffer::operator()(ssize_t row, ssize_t col) const {
     return get_value(row, col);
 }
 
+Device Buffer::device() const {
+    return m_device;
+}
 double * Buffer::data_ptr() const {
     return m_buffer;
 }
 shape_t Buffer::shape() const {
     return {m_nrow, m_ncol};
 }
-size_t Buffer::nrow() const {
+ssize_t Buffer::nrow() const {
     return m_nrow;
 }
-size_t Buffer::ncol() const {
+ssize_t Buffer::ncol() const {
     return m_ncol;
 }
-size_t Buffer::num_elem() const {
+ssize_t Buffer::num_elem() const {
     return m_nrow * m_ncol;
 }
-size_t Buffer::buffer_size() const {
+ssize_t Buffer::buffer_size() const {
     return m_nrow * m_ncol * sizeof(double);
 }
-size_t Buffer::index_at(size_t row, size_t col) const {
+ssize_t Buffer::index_at(ssize_t row, ssize_t col) const {
     return row * m_ncol + col;
 }
 bool Buffer::is_same_shape(Buffer const &other) const {
@@ -121,6 +130,11 @@ bool Buffer::is_same_shape(Buffer const &other) const {
 }
 bool Buffer::is_same_device(Buffer const &other) const {
     return m_device == other.device();
+}
+std::string Buffer::to_string() const {
+    std::stringstream ss;
+    ss << "<Buffer shape=(" << nrow() << ", " << ncol() << ") device=" << ((m_device == Device::CPU)? "CPU": "GPU") << " @" << (uintptr_t)this << ">";
+    return ss.str();
 }
 
 void Buffer::to(Device device){
@@ -141,6 +155,7 @@ void Buffer::to(Device device){
         break;
     }
     m_buffer = new_buffer;
+    m_device = device;
 }
 void Buffer::fill(double val){
     switch (m_device)
@@ -149,7 +164,8 @@ void Buffer::fill(double val){
         std::fill_n(m_buffer, num_elem(), val);
         break;
     case Device::GPU:
-        thrust::fill_n(m_buffer, num_elem(), val);
+        thrust::device_ptr<double> dev_ptr(m_buffer);
+        thrust::fill_n(dev_ptr, num_elem(), val); 
         break;
     }
 }
@@ -167,14 +183,15 @@ void Buffer::_release(){
         delete[] m_buffer;
         break;
     case Device::GPU:
-        cudaFree(m_buffer);
+        cudaFree(m_buffer); 
+        cudaCheckErrors("Failed to free GPU buffer.");
         break;
     }
 }
 
 void Buffer::copy_to_numpy(ndarray_t out) const {
-    size_t buf_buffer_size = buffer_size();
-    size_t npy_buffer_size = out.nbytes();
+    ssize_t buf_buffer_size = buffer_size();
+    ssize_t npy_buffer_size = out.nbytes();
 
     if (npy_buffer_size != buf_buffer_size)
         throw std::runtime_error("Size of numpy array does not match this buffer.");
@@ -186,6 +203,7 @@ void Buffer::copy_to_numpy(ndarray_t out) const {
         break;
     case Device::GPU:
         cudaMemcpy(out.mutable_data(), m_buffer, buf_buffer_size, cudaMemcpyDeviceToHost);
+        cudaCheckErrors("Failed to copy data from GPU buffer.");
         break;
     }
 }

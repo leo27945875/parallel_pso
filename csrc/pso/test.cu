@@ -13,7 +13,7 @@
 
 
 void test_curand(
-    size_t             num    = 10,
+    ssize_t            num    = 10,
     int                n_loop = 5,
     unsigned long long seed   = 0
 ){
@@ -28,7 +28,7 @@ void test_curand(
         get_curand_numbers(num, d_states, d_res);
         cudaMemcpy(h_res, d_res, num * sizeof(double), cudaMemcpyDeviceToHost);
         std::cout << "cuRAND test:\n";
-        for (size_t i = 0; i < num; i++)
+        for (ssize_t i = 0; i < num; i++)
             std::cout << h_res[i] << ", ";
         std::cout << std::endl;
     }
@@ -40,20 +40,20 @@ void test_curand(
 
 
 void test_mutex(
-    size_t num = 100033
+    ssize_t num = 100033
 ){
     srand(time(NULL));
 
     double *h_arr, *d_arr;
 
     double h_global_min_num = DBL_MAX, real_global_min_num = DBL_MAX;
-    size_t h_global_min_idx = num, real_global_min_idx = num;
+    ssize_t h_global_min_idx = num, real_global_min_idx = num;
 
     double *d_global_min_num;
-    size_t *d_global_min_idx;
+    ssize_t *d_global_min_idx;
 
     h_arr = new double[num];
-    for (size_t i = 0; i < num; i++){
+    for (ssize_t i = 0; i < num; i++){
         h_arr[i] = rand_number(10.);
         if (h_arr[i] < real_global_min_num){
             real_global_min_num = h_arr[i];
@@ -63,11 +63,11 @@ void test_mutex(
     
     cudaMalloc(&d_arr, num * sizeof(double));
     cudaMalloc(&d_global_min_num, sizeof(double));
-    cudaMalloc(&d_global_min_idx, sizeof(size_t));
+    cudaMalloc(&d_global_min_idx, sizeof(ssize_t));
 
     cudaMemcpy(d_arr, h_arr, num * sizeof(double), cudaMemcpyHostToDevice);
     cudaMemcpy(d_global_min_num, &h_global_min_num, sizeof(double), cudaMemcpyHostToDevice);
-    cudaMemcpy(d_global_min_idx, &h_global_min_idx, sizeof(size_t), cudaMemcpyHostToDevice);
+    cudaMemcpy(d_global_min_idx, &h_global_min_idx, sizeof(ssize_t), cudaMemcpyHostToDevice);
 
     cuda_mutex_t *mutex;
     cuda_create_mutex(&mutex);
@@ -75,9 +75,9 @@ void test_mutex(
     cuda_destroy_mutex(mutex);
 
     cudaMemcpy(&h_global_min_num, d_global_min_num, sizeof(double), cudaMemcpyDeviceToHost);
-    cudaMemcpy(&h_global_min_idx, d_global_min_idx, sizeof(size_t), cudaMemcpyDeviceToHost);
+    cudaMemcpy(&h_global_min_idx, d_global_min_idx, sizeof(ssize_t), cudaMemcpyDeviceToHost);
 
-    for (size_t i = 0; i < num; i++)
+    for (ssize_t i = 0; i < num; i++)
         std::cout << h_arr[i] << std::endl;
     std::cout << "\nREAL:\n";
     std::cout << "MIN_NUM = " << real_global_min_num << " | MIN_IDX = " << real_global_min_idx << std::endl;
@@ -92,8 +92,8 @@ void test_mutex(
 
 
 void test_levy_function(
-    size_t num         = 1000,
-    size_t dim         = 500,
+    ssize_t num        = 1000,
+    ssize_t dim        = 500,
     double tol         = 1e-5,
     bool   is_show_out = true
 ){
@@ -107,7 +107,7 @@ void test_levy_function(
     out_cpu  = new double[num];
     out_cuda = new double[num];
 
-    for (size_t i = 0; i < num * dim; i++) 
+    for (ssize_t i = 0; i < num * dim; i++) 
         xs[i] = rand_number();
     
     levy_function_cpu(xs, out_cpu, num, dim);
@@ -120,18 +120,18 @@ void test_levy_function(
 
     if (is_show_out){
         std::cout << "\nLevy results: (CPU)" << std::endl;
-        for (size_t i = 0; i < num; i++)
+        for (ssize_t i = 0; i < num; i++)
             std::cout << out_cpu[i] << ", ";
         std::cout << std::endl;
 
         std::cout << "\nLevy results: (CUDA)" << std::endl;
-        for (size_t i = 0; i < num; i++)
+        for (ssize_t i = 0; i < num; i++)
             std::cout << out_cuda[i] << ", ";
         std::cout << std::endl;
     }
 
     bool is_close = true;
-    for (size_t i = 0; i < num; i++){
+    for (ssize_t i = 0; i < num; i++){
         is_close = is_close && abs(out_cpu[i] - out_cuda[i]) < tol;
     }
     std::cout << "\nis_close = " << is_close << std::endl;
@@ -145,8 +145,8 @@ void test_levy_function(
 
 
 void test_update_velocity(
-    size_t             num            = 10,
-    size_t             dim            = 500,
+    ssize_t             num           = 10,
+    ssize_t             dim           = 500,
     double             v_max          = 1.,
     bool               is_norm_buffer = true,
     unsigned long long seed           = 0
@@ -163,9 +163,9 @@ void test_update_velocity(
     h_global_best_x = new double[dim];
     h_norm_buffer   = new double[num];
 
-    for (size_t i = 0; i < num; i++){
+    for (ssize_t i = 0; i < num; i++){
         h_norm_buffer[i] = 0.;
-        for (size_t j = 0; j < dim; j++){
+        for (ssize_t j = 0; j < dim; j++){
             h_vs           [i * dim + j] = 0.;
             h_xs           [i * dim + j] = static_cast<double>(i);
             h_local_best_xs[i * dim + j] = static_cast<double>(num / 2);
@@ -219,10 +219,10 @@ void test_update_velocity(
 
 
 void test_update_position(
-    size_t num   = 10,
-    size_t dim   = 500,
-    double x_min = -7.,
-    double x_max = 7.
+    ssize_t num   = 10,
+    ssize_t dim   = 500,
+    double  x_min = -7.,
+    double  x_max = 7.
 ){
     double *h_xs, *h_vs;
     double *d_xs, *d_vs;
@@ -231,8 +231,8 @@ void test_update_position(
     h_vs = new double[num * dim];
 
     memset(h_xs, 0, num * dim * sizeof(double));
-    for (size_t i = 0; i < num; i++){
-        for (size_t j = 0; j < dim; j++){
+    for (ssize_t i = 0; i < num; i++){
+        for (ssize_t j = 0; j < dim; j++){
             h_vs[i * dim + j] = -static_cast<double>(num) + 2 * static_cast<double>(i);
         }
     }
@@ -264,8 +264,8 @@ void test_update_position(
 
 
 void test_update_best(
-    size_t num = 10000,
-    size_t dim = 5000
+    ssize_t num = 10000,
+    ssize_t dim = 5000
 ){
 
     srand(time(NULL));
@@ -276,17 +276,17 @@ void test_update_best(
     double *d_xs, *d_local_best_xs, *d_global_best_x;
     double *d_x_fits, *d_local_best_fits, *d_global_best_fit;
 
-    size_t real_global_min_idx = num;
+    ssize_t real_global_min_idx = num;
     double real_global_min_fit = DBL_MAX;
 
-    size_t global_best_idx = num;
+    ssize_t global_best_idx = num;
 
     h_xs            = new double[num * dim];
     h_local_best_xs = new double[num * dim];
     h_global_best_x = new double[dim];
 
-    for (size_t i = 0; i < num; i++)
-    for (size_t j = 0; j < dim; j++){
+    for (ssize_t i = 0; i < num; i++)
+    for (ssize_t j = 0; j < dim; j++){
         h_xs[i * dim + j] = static_cast<double>(i + 1);
         h_local_best_xs[i * dim + j] = 0.;
         h_global_best_x[j] = 0.;
@@ -297,7 +297,7 @@ void test_update_best(
     h_global_best_fit = new double;
     x_fits            = new double[num];
     
-    for (size_t i = 0; i < num; i++){
+    for (ssize_t i = 0; i < num; i++){
         h_x_fits[i] = rand_number(num); // static_cast<double>(i);
         h_local_best_fits[i] = static_cast<double>(num / 2);
         if (h_x_fits[i] < real_global_min_fit){

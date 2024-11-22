@@ -1,0 +1,1 @@
+/usr/bin/c++ -fPIC -O3 -Wall -flto -shared  -o /home/pairlab/Documents/Leo/parallel_pso/cuPSO/cuPSO.cpython-312-x86_64-linux-gnu.so CMakeFiles/cuPSO.dir/csrc/buffer/buffer.cu.o CMakeFiles/cuPSO.dir/csrc/bind.cpp.o   -L/usr/local/cuda-12.1/targets/x86_64-linux/lib/stubs  -L/usr/local/cuda-12.1/targets/x86_64-linux/lib  -lcudadevrt -lcudart_static -lrt -lpthread -ldl

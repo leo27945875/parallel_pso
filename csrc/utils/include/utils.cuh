@@ -48,15 +48,15 @@ __device__ void unlock_kernel_mutex(cuda_mutex_t *mutex);
 // Random number functions:
 typedef curandState cuda_rng_t;
 __host__ double rand_number(double range = 1.);
-__host__ void curand_setup(size_t size, unsigned long long seed, cuda_rng_t **rng_states);
-__host__ void get_curand_numbers(size_t size, cuda_rng_t *rng_states, double *res);
+__host__ void curand_setup(ssize_t size, unsigned long long seed, cuda_rng_t **rng_states);
+__host__ void get_curand_numbers(ssize_t size, cuda_rng_t *rng_states, double *res);
 
 // Other helper functions:
-__host__ void print_matrix(double const *mat, size_t nrow, size_t ncol);
+__host__ void print_matrix(double const *mat, ssize_t nrow, ssize_t ncol);
 
-__host__ __device__ size_t get_num_block_1d(size_t dim);
-__host__ __device__ size_t cdiv(size_t total, size_t size);
+__host__ __device__ ssize_t get_num_block_1d(ssize_t dim);
+__host__ __device__ ssize_t cdiv(ssize_t total, ssize_t size);
 __host__ __device__ double pow2(double x);
 
-__global__ void sum_rows_kernel(double const *xs, double *out, size_t num, size_t dim);
-__global__ void find_global_min_kernel(double const *numbers, double *global_min_num, size_t *global_min_idx, size_t size, cuda_mutex_t *mutex);
+__global__ void sum_rows_kernel(double const *xs, double *out, ssize_t num, ssize_t dim);
+__global__ void find_global_min_kernel(double const *numbers, double *global_min_num, ssize_t *global_min_idx, ssize_t size, cuda_mutex_t *mutex);

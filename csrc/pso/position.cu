@@ -7,12 +7,12 @@ __global__ void update_positions_kernel(
     double const *vs,
     double        x_min,
     double        x_max,
-    size_t        num,
-    size_t        dim
+    ssize_t       num,
+    ssize_t       dim
 ){
-    size_t nid = blockIdx.x;
-    size_t idx = blockIdx.y * blockDim.x + threadIdx.x;
-    for (size_t i = idx; i < dim; i += gridDim.y * blockDim.x)
+    ssize_t nid = blockIdx.x;
+    ssize_t idx = blockIdx.y * blockDim.x + threadIdx.x;
+    for (ssize_t i = idx; i < dim; i += gridDim.y * blockDim.x)
         xs[nid * dim + i] = min(
             x_max, 
             max(
@@ -27,8 +27,8 @@ void update_positions_cuda(
     double const *vs_cuda_ptr,
     double        x_min,
     double        x_max,
-    size_t        num,
-    size_t        dim
+    ssize_t       num,
+    ssize_t       dim
 ){
     dim3 grid_dims(num, get_num_block_1d(dim));
     dim3 block_dims(BLOCK_DIM_1D);
