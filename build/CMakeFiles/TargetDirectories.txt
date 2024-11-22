@@ -1,3 +1,0 @@
-/home/pairlab/Documents/Leo/parallel_pso/build/CMakeFiles/cuPSO.dir
-/home/pairlab/Documents/Leo/parallel_pso/build/CMakeFiles/edit_cache.dir
-/home/pairlab/Documents/Leo/parallel_pso/build/CMakeFiles/rebuild_cache.dir
