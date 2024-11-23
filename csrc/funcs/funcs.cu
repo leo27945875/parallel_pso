@@ -1,5 +1,5 @@
 #include <cmath>
-#include "levy.cuh"
+#include "funcs.cuh"
 #include "utils.cuh"
 
 

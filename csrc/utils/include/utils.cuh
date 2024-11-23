@@ -2,13 +2,12 @@
 
 #include <cstdio>
 #include <cstdlib>
-#include <curand.h>
 #include <curand_kernel.h>
 
 #define MAX_NUM_BLOCK_1D 128UL
 #define BLOCK_DIM_1D     256UL
 
-#define IS_TESTING                0
+#define IS_TESTING                1
 #define IS_CHECK_CUDA_ERROR       1
 #define IS_VELOVITY_USE_RANDOM    1
 #define IS_GLOBAL_BEST_USE_ATOMIC 1
@@ -49,6 +48,7 @@ __device__ void unlock_kernel_mutex(cuda_mutex_t *mutex);
 typedef curandState cuda_rng_t;
 __host__ double rand_number(double range = 1.);
 __host__ void curand_setup(ssize_t size, unsigned long long seed, cuda_rng_t **rng_states);
+__host__ void curand_destroy(cuda_rng_t *rng_states);
 __host__ void get_curand_numbers(ssize_t size, cuda_rng_t *rng_states, double *res);
 
 // Other helper functions:

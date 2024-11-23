@@ -14,5 +14,5 @@ void update_velocities_cuda(
     double        v_max,
     ssize_t       num, 
     ssize_t       dim,
-    cuda_rng_t   *rng_states
+    cuda_rng_t   *rng_states_cuda_ptr
 );

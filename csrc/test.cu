@@ -1,3 +1,5 @@
+#include "utils.cuh"
+
 #if IS_TESTING
 
 #include <iostream>
@@ -5,11 +7,10 @@
 #include <cfloat>
 #include <cstdlib>
 
-#include "levy.cuh"
+#include "funcs.cuh"
 #include "velocity.cuh"
 #include "position.cuh"
 #include "evolve.cuh"
-#include "utils.cuh"
 
 
 void test_curand(
@@ -377,7 +378,7 @@ int main(){
 
     // test_mutex();
     // test_curand();
-    // test_levy_function();
+    test_levy_function();
     // test_update_velocity();
     // test_update_position();
     // test_update_best();

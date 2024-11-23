@@ -90,11 +90,15 @@ __host__ double rand_number(double range){
 __host__ void curand_setup(ssize_t size, unsigned long long seed, cuda_rng_t **rng_states){
     cudaMalloc(rng_states, size * sizeof(cuda_rng_t));
     init_rng_states_kernel<<<cdiv(size, BLOCK_DIM_1D), BLOCK_DIM_1D>>>(size, *rng_states, seed);
-    cudaCheckErrors("Running 'init_rng_states_kernel' failed.");
+    cudaCheckErrors("Failed to run 'init_rng_states_kernel'.");
+}
+__host__ void curand_destroy(cuda_rng_t *rng_states){
+    cudaFree(rng_states);
+    cudaCheckErrors("Failed to free CUDA memory 'rng_states'.");
 }
 __host__ void get_curand_numbers(ssize_t size, cuda_rng_t *rng_states, double *res){
     get_rand_numbers_kernel<<<cdiv(size, BLOCK_DIM_1D), BLOCK_DIM_1D>>>(size, rng_states, res);
-    cudaCheckErrors("Running 'get_rand_numbers_kernel' failed.");
+    cudaCheckErrors("Failed to run 'get_rand_numbers_kernel'.");
 }
 
 

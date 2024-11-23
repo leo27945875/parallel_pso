@@ -10,8 +10,8 @@ __global__ void update_velocities_kernel(
     double        w,
     double        c0,
     double        c1,
-    ssize_t        num, 
-    ssize_t        dim,
+    ssize_t       num, 
+    ssize_t       dim,
     cuda_rng_t   *rng_states
 ){
     ssize_t nid = blockIdx.x;
@@ -53,8 +53,8 @@ __global__ void update_velocities_with_sum_pow2_kernel(
     double        w,
     double        c0,
     double        c1,
-    ssize_t        num, 
-    ssize_t        dim,
+    ssize_t       num, 
+    ssize_t       dim,
     cuda_rng_t   *rng_states
 ){
     __shared__ double p_smem[BLOCK_DIM_1D];
@@ -108,8 +108,8 @@ __global__ void norm_clip_velocities_kernel(
     double *vs, 
     double *v_sum_pow2_res,
     double  v_max,
-    ssize_t  num, 
-    ssize_t  dim
+    ssize_t num, 
+    ssize_t dim
 ){
     ssize_t nid = blockIdx.x;
     ssize_t idx = blockIdx.y * blockDim.x + threadIdx.x;
@@ -131,16 +131,16 @@ void update_velocities_cuda(
     double        c0,
     double        c1,
     double        v_max,
-    ssize_t        num, 
-    ssize_t        dim,
-    cuda_rng_t   *rng_states
+    ssize_t       num, 
+    ssize_t       dim,
+    cuda_rng_t   *rng_states_cuda_ptr
 ){
     dim3 grid_dims(num, get_num_block_1d(dim));
     dim3 block_dims(BLOCK_DIM_1D);
 
     if (v_max <= 0.){
         update_velocities_kernel<<<grid_dims, block_dims>>>(
-            vs_cuda_ptr, xs_cuda_ptr, local_best_xs_cuda_ptr, global_best_x_cuda_ptr, w, c0, c1, num, dim, rng_states
+            vs_cuda_ptr, xs_cuda_ptr, local_best_xs_cuda_ptr, global_best_x_cuda_ptr, w, c0, c1, num, dim, rng_states_cuda_ptr
         );
         cudaCheckErrors("Failed to run 'update_velocities_kernel'.");
         
@@ -154,7 +154,7 @@ void update_velocities_cuda(
         cudaCheckErrors("Failed to set buffer 'v_sum_pow2_cuda_ptr' to zeros.");
 
         update_velocities_with_sum_pow2_kernel<<<grid_dims, block_dims>>>(
-            vs_cuda_ptr, xs_cuda_ptr, local_best_xs_cuda_ptr, global_best_x_cuda_ptr, v_sum_pow2_cuda_ptr, w, c0, c1, num, dim, rng_states
+            vs_cuda_ptr, xs_cuda_ptr, local_best_xs_cuda_ptr, global_best_x_cuda_ptr, v_sum_pow2_cuda_ptr, w, c0, c1, num, dim, rng_states_cuda_ptr
         );
         cudaCheckErrors("Failed to run 'update_velocities_with_sum_pow2_kernel'.");
         

@@ -4,33 +4,39 @@
 #include <utility>
 #include <pybind11/numpy.h>
 
+#include "utils.cuh"
+
 namespace py = pybind11;
 
-typedef std::pair<ssize_t, ssize_t>                                    shape_t;
-typedef py::array_t<double, py::array::c_style | py::array::forcecast> ndarray_t;
+using shape_t = std::pair<ssize_t, ssize_t>;
+template<typename T> using ndarray_t = py::array_t<T, py::array::c_style | py::array::forcecast>;
+
 
 enum class Device {
     CPU,
     GPU
 };
 
+template <typename ElemType>
 class Buffer 
 {
 public:
     Buffer            () = delete;
     Buffer            (ssize_t nrow, ssize_t ncol, Device device);
-    Buffer            (Buffer const  &other);                      // copy ctor
-    Buffer            (Buffer       &&other) noexcept;             // move ctor
-    Buffer & operator=(Buffer const  &other);                      // copy assignment
-    Buffer & operator=(Buffer       &&other) noexcept;             // move assignment
+    Buffer            (Buffer const  &other);
+    Buffer            (Buffer       &&other) noexcept;
+    Buffer & operator=(Buffer const  &other);
+    Buffer & operator=(Buffer       &&other) noexcept;
     ~Buffer           ();
 
-    void   set_value (ssize_t row, ssize_t col, double val);
-    double get_value (ssize_t row, ssize_t col) const;
-    double operator()(ssize_t row, ssize_t col) const;
+    void     set_value (ssize_t row, ssize_t col, ElemType val);
+    ElemType get_value (ssize_t row, ssize_t col) const;
+    ElemType operator()(ssize_t row, ssize_t col) const;
+
+    ElemType *       data_ptr () const;
+    ElemType const * cdata_ptr() const; 
 
     Device      device        () const;
-    double *    data_ptr      () const;
     shape_t     shape         () const;
     ssize_t     nrow          () const;
     ssize_t     ncol          () const;
@@ -42,16 +48,45 @@ public:
     std::string to_string     () const;
 
     void to   (Device device);
-    void fill (double val);
+    void fill (ElemType val);
     void clear();
 
-    void copy_to_numpy(ndarray_t out) const;
+    void copy_to_numpy(ndarray_t<ElemType> out) const;
 
 private:
-    double  *m_buffer = nullptr;
-    ssize_t  m_nrow;
-    ssize_t  m_ncol;
-    Device   m_device;
+    ElemType  *m_buffer;
+    ssize_t    m_nrow;
+    ssize_t    m_ncol;
+    Device     m_device;
 
     void _release();
+};
+
+template class Buffer<float>;
+template class Buffer<double>;
+
+
+class CURANDStates 
+{
+public:
+    CURANDStates            () = delete;
+    CURANDStates            (ssize_t size, unsigned long long seed);
+    CURANDStates            (CURANDStates const  &other);
+    CURANDStates            (CURANDStates       &&other) noexcept;
+    CURANDStates & operator=(CURANDStates const  &other);
+    CURANDStates & operator=(CURANDStates       &&other) noexcept;
+    ~CURANDStates           ();
+
+    cuda_rng_t *       data_ptr () const;
+    cuda_rng_t const * cdata_ptr() const;
+
+    ssize_t     num_elem   () const;
+    ssize_t     buffer_size() const;
+    std::string to_string  () const;
+
+    void clear();
+
+private:
+    cuda_rng_t *m_buffer;
+    ssize_t     m_size;
 };

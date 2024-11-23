@@ -5,16 +5,17 @@
 #include <thrust/device_ptr.h>
 
 #include "buffer.cuh"
-#include "utils.cuh"
 
 
-Buffer::Buffer(ssize_t nrow, ssize_t ncol, Device device)
+// start Buffer
+template <typename ElemType>
+Buffer<ElemType>::Buffer(ssize_t nrow, ssize_t ncol, Device device)
     : m_nrow(nrow), m_ncol(ncol), m_device(device)
 {
     switch (m_device)
     {
     case Device::CPU:
-        m_buffer = new double[num_elem()];
+        m_buffer = new ElemType[num_elem()];
         break;
     case Device::GPU:
         cudaMalloc(&m_buffer, buffer_size()); 
@@ -22,13 +23,14 @@ Buffer::Buffer(ssize_t nrow, ssize_t ncol, Device device)
         break;
     }
 }
-Buffer::Buffer(Buffer const &other)
-    : m_nrow(other.m_nrow), m_ncol(other.m_ncol), m_device(other.device())
+template <typename ElemType>
+Buffer<ElemType>::Buffer(Buffer<ElemType> const &other)
+    : m_nrow(other.m_nrow), m_ncol(other.m_ncol), m_device(other.m_device)
 {
     switch (m_device)
     {
     case Device::CPU:
-        m_buffer = new double[num_elem()];
+        m_buffer = new ElemType[num_elem()];
         memcpy(m_buffer, other.m_buffer, buffer_size());
         break;
     case Device::GPU:
@@ -37,19 +39,20 @@ Buffer::Buffer(Buffer const &other)
         break;
     }
 }
-Buffer::Buffer(Buffer &&other) noexcept 
-    : m_nrow(other.m_nrow), m_ncol(other.m_ncol), m_device(other.device())
+template <typename ElemType>
+Buffer<ElemType>::Buffer(Buffer<ElemType> &&other) noexcept 
+    : m_nrow(other.m_nrow), m_ncol(other.m_ncol), m_device(other.m_device), m_buffer(other.m_buffer)
 {
-    m_buffer       = other.m_buffer;
     other.m_buffer = nullptr;
     other.m_nrow   = 0;
     other.m_ncol   = 0;
 }
-Buffer & Buffer::operator=(Buffer const &other){
+template <typename ElemType>
+Buffer<ElemType> & Buffer<ElemType>::operator=(Buffer<ElemType> const &other){
     if (!is_same_shape(other))
-        throw std::runtime_error("Shapes does not match.");
+        throw std::runtime_error("Shapes do not match.");
     if (!is_same_device(other))
-        throw std::runtime_error("Devices does not match.");
+        throw std::runtime_error("Devices do not match.");
     switch (m_device)
     {
     case Device::CPU:
@@ -61,86 +64,111 @@ Buffer & Buffer::operator=(Buffer const &other){
     }
     return *this;
 }
-Buffer & Buffer::operator=(Buffer &&other) noexcept {
+template <typename ElemType>
+Buffer<ElemType> & Buffer<ElemType>::operator=(Buffer<ElemType> &&other) noexcept {
     _release();
-    m_buffer = other.m_buffer;
-    m_nrow   = other.m_nrow;
-    m_ncol   = other.m_ncol;
-    m_device = other.m_device;
+    m_buffer       = other.m_buffer;
+    m_nrow         = other.m_nrow;
+    m_ncol         = other.m_ncol;
+    m_device       = other.m_device;
+    other.m_buffer = nullptr;
+    other.m_nrow   = 0;
+    other.m_ncol   = 0;
     return *this;
 }
-Buffer::~Buffer(){
+template <typename ElemType>
+Buffer<ElemType>::~Buffer(){
     _release();
 }
 
-void Buffer::set_value(ssize_t row, ssize_t col, double val) {
+template <typename ElemType>
+void Buffer<ElemType>::set_value(ssize_t row, ssize_t col, ElemType val) {
     switch (m_device)
     {
     case Device::CPU:
         m_buffer[index_at(row, col)] = val;
         break;
     case Device::GPU:
-        cudaMemcpy(m_buffer + index_at(row, col), &val, sizeof(double), cudaMemcpyHostToDevice);
+        cudaMemcpy(m_buffer + index_at(row, col), &val, sizeof(ElemType), cudaMemcpyHostToDevice);
         break;
     }
 }
-double Buffer::get_value(ssize_t row, ssize_t col) const {
-    double res;
+template <typename ElemType>
+ElemType Buffer<ElemType>::get_value(ssize_t row, ssize_t col) const {
+    ElemType res;
     switch (m_device)
     {
     case Device::CPU:
         res = m_buffer[index_at(row, col)];
         break;
     case Device::GPU:
-        cudaMemcpy(&res, m_buffer + index_at(row, col), sizeof(double), cudaMemcpyDeviceToHost);
+        cudaMemcpy(&res, m_buffer + index_at(row, col), sizeof(ElemType), cudaMemcpyDeviceToHost);
         break;
     }
     return res;
 }
-double Buffer::operator()(ssize_t row, ssize_t col) const {
+template <typename ElemType>
+ElemType Buffer<ElemType>::operator()(ssize_t row, ssize_t col) const {
     return get_value(row, col);
 }
 
-Device Buffer::device() const {
-    return m_device;
-}
-double * Buffer::data_ptr() const {
+template <typename ElemType>
+ElemType * Buffer<ElemType>::data_ptr() const {
     return m_buffer;
 }
-shape_t Buffer::shape() const {
+template <typename ElemType>
+ElemType const * Buffer<ElemType>::cdata_ptr() const {
+    return const_cast<ElemType const *>(m_buffer);
+}
+
+template <typename ElemType>
+Device Buffer<ElemType>::device() const {
+    return m_device;
+}
+template <typename ElemType>
+shape_t Buffer<ElemType>::shape() const {
     return {m_nrow, m_ncol};
 }
-ssize_t Buffer::nrow() const {
+template <typename ElemType>
+ssize_t Buffer<ElemType>::nrow() const {
     return m_nrow;
 }
-ssize_t Buffer::ncol() const {
+template <typename ElemType>
+ssize_t Buffer<ElemType>::ncol() const {
     return m_ncol;
 }
-ssize_t Buffer::num_elem() const {
+template <typename ElemType>
+ssize_t Buffer<ElemType>::num_elem() const {
     return m_nrow * m_ncol;
 }
-ssize_t Buffer::buffer_size() const {
-    return m_nrow * m_ncol * sizeof(double);
+template <typename ElemType>
+ssize_t Buffer<ElemType>::buffer_size() const {
+    return m_nrow * m_ncol * sizeof(ElemType);
 }
-ssize_t Buffer::index_at(ssize_t row, ssize_t col) const {
+template <typename ElemType>
+ssize_t Buffer<ElemType>::index_at(ssize_t row, ssize_t col) const {
     return row * m_ncol + col;
 }
-bool Buffer::is_same_shape(Buffer const &other) const {
+template <typename ElemType>
+bool Buffer<ElemType>::is_same_shape(Buffer<ElemType> const &other) const {
     return m_nrow == other.nrow() && m_ncol == other.ncol();
 }
-bool Buffer::is_same_device(Buffer const &other) const {
+template <typename ElemType>
+bool Buffer<ElemType>::is_same_device(Buffer<ElemType> const &other) const {
     return m_device == other.device();
 }
-std::string Buffer::to_string() const {
+template <typename ElemType>
+std::string Buffer<ElemType>::to_string() const {
     std::stringstream ss;
-    ss << "<Buffer shape=(" << nrow() << ", " << ncol() << ") device=" << ((m_device == Device::CPU)? "CPU": "GPU") << " @" << (uintptr_t)this << ">";
+    ss << "<Buffer shape=(" << m_nrow << ", " << m_ncol << ") device=" << ((m_device == Device::CPU)? "CPU": "GPU") << " @" << (uintptr_t)this << ">";
     return ss.str();
 }
 
-void Buffer::to(Device device){
+template <typename ElemType>
+void Buffer<ElemType>::to(Device device){
     if (m_device == device)
         return;
-    double *new_buffer;
+    ElemType *new_buffer;
     switch (m_device)
     {
     case Device::CPU:
@@ -149,7 +177,7 @@ void Buffer::to(Device device){
         delete[] m_buffer;
         break;
     case Device::GPU:
-        new_buffer = new double[num_elem()];
+        new_buffer = new ElemType[num_elem()];
         cudaMemcpy(new_buffer, m_buffer, buffer_size(), cudaMemcpyDeviceToHost);
         cudaFree(m_buffer);
         break;
@@ -157,26 +185,29 @@ void Buffer::to(Device device){
     m_buffer = new_buffer;
     m_device = device;
 }
-void Buffer::fill(double val){
+template <typename ElemType>
+void Buffer<ElemType>::fill(ElemType val){
     switch (m_device)
     {
     case Device::CPU:
         std::fill_n(m_buffer, num_elem(), val);
         break;
     case Device::GPU:
-        thrust::device_ptr<double> dev_ptr(m_buffer);
+        thrust::device_ptr<ElemType> dev_ptr(m_buffer);
         thrust::fill_n(dev_ptr, num_elem(), val); 
         break;
     }
 }
-void Buffer::clear(){
+template <typename ElemType>
+void Buffer<ElemType>::clear(){
     _release();
     m_buffer = nullptr;
     m_nrow   = 0;
     m_ncol   = 0;
 }
 
-void Buffer::_release(){
+template <typename ElemType>
+void Buffer<ElemType>::_release(){
     switch (m_device)
     {
     case Device::CPU:
@@ -189,7 +220,8 @@ void Buffer::_release(){
     }
 }
 
-void Buffer::copy_to_numpy(ndarray_t out) const {
+template <typename ElemType>
+void Buffer<ElemType>::copy_to_numpy(ndarray_t<ElemType> out) const {
     ssize_t buf_buffer_size = buffer_size();
     ssize_t npy_buffer_size = out.nbytes();
 
@@ -203,7 +235,70 @@ void Buffer::copy_to_numpy(ndarray_t out) const {
         break;
     case Device::GPU:
         cudaMemcpy(out.mutable_data(), m_buffer, buf_buffer_size, cudaMemcpyDeviceToHost);
-        cudaCheckErrors("Failed to copy data from GPU buffer.");
         break;
     }
 }
+// end Buffer
+
+// start CURANDStates
+CURANDStates::CURANDStates(ssize_t size, unsigned long long seed) 
+    : m_size(size) 
+{
+    curand_setup(size, seed, &m_buffer);
+}
+CURANDStates::CURANDStates(CURANDStates const &other)
+    : m_size(other.m_size)
+{
+    cudaMalloc(&m_buffer, buffer_size());
+    cudaMemcpy(m_buffer, other.m_buffer, buffer_size(), cudaMemcpyDeviceToDevice);
+}
+CURANDStates::CURANDStates(CURANDStates &&other) noexcept
+    : m_size(other.m_size), m_buffer(other.m_buffer)
+{
+    other.m_buffer = nullptr;
+    other.m_size   = 0;
+}
+CURANDStates & CURANDStates::operator=(CURANDStates const &other){
+    if (m_size != other.m_size)
+        throw std::runtime_error("Shapes do not match.");
+    cudaMemcpy(m_buffer, other.m_buffer, buffer_size(), cudaMemcpyDeviceToDevice);
+    m_size = other.m_size;
+    return *this;
+}
+CURANDStates & CURANDStates::operator=(CURANDStates &&other) noexcept {
+    curand_destroy(m_buffer);
+    m_buffer       = other.m_buffer;
+    m_size         = other.m_size;
+    other.m_buffer = nullptr;
+    other.m_size   = 0;
+    return *this;
+}
+CURANDStates::~CURANDStates(){
+    curand_destroy(m_buffer);
+}
+
+cuda_rng_t * CURANDStates::data_ptr() const {
+    return m_buffer;
+}
+cuda_rng_t const * CURANDStates::cdata_ptr() const {
+    return const_cast<cuda_rng_t const *>(m_buffer);
+}
+
+ssize_t CURANDStates::num_elem() const {
+    return m_size;
+}
+ssize_t CURANDStates::buffer_size() const {
+    return m_size * sizeof(cuda_rng_t);
+}
+std::string CURANDStates::to_string() const {
+    std::stringstream ss;
+    ss << "<CURANDStates size=" << m_size << " device=GPU @" << (uintptr_t)this << ">";
+    return ss.str();
+}
+
+void CURANDStates::clear() {
+    curand_destroy(m_buffer);
+    m_buffer = nullptr;
+    m_size   = 0;
+}
+// end CURANDStates

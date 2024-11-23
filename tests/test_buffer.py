@@ -22,12 +22,14 @@ class TestBuffer(unittest.TestCase):
     def test_cpu_buffer(self):
         buffer = cuPSO.Buffer(10, 15, cuPSO.Device.CPU)
         buffer.fill(5.)
+        self.assertEqual(buffer[0, 0], 5.)
         self.assertEqual(buffer[2, 3], 5.)
         self.assertEqual(buffer[9, 14], 5.)
     
     def test_gpu_buffer(self):
         buffer = cuPSO.Buffer(10, 15, cuPSO.Device.GPU)
         buffer.fill(5.)
+        self.assertEqual(buffer[0, 0], 5.)
         self.assertEqual(buffer[2, 3], 5.)
         self.assertEqual(buffer[9, 14], 5.)
 
@@ -60,6 +62,24 @@ class TestBuffer(unittest.TestCase):
         buffer.fill(5.)
         buffer.copy_to_numpy(npy_buffer)
         self.assertTrue(np.all(npy_buffer == 5.))
+
+    def test_clear_cpu_buffer(self):
+        buffer = cuPSO.Buffer(10, 15, cuPSO.Device.CPU)
+        buffer.clear()
+        self.assertEqual(buffer.buffer_size(), 0)
+        self.assertEqual(buffer.num_elem(), 0)
+        self.assertEqual(buffer.shape(), (0, 0))
+        self.assertEqual(buffer.nrow(), 0)
+        self.assertEqual(buffer.ncol(), 0)
+    
+    def test_clear_gpu_buffer(self):
+        buffer = cuPSO.Buffer(10, 15, cuPSO.Device.GPU)
+        buffer.clear()
+        self.assertEqual(buffer.buffer_size(), 0)
+        self.assertEqual(buffer.num_elem(), 0)
+        self.assertEqual(buffer.shape(), (0, 0))
+        self.assertEqual(buffer.nrow(), 0)
+        self.assertEqual(buffer.ncol(), 0)
     
     def test_buffer_string(self):
         buffer = cuPSO.Buffer(10, 15, cuPSO.Device.CPU)
