@@ -4,6 +4,9 @@ import numpy as np
 
 
 class TestBuffer(unittest.TestCase):
+    def setUp(self):
+        print(f"\nTesting: [{__class__.__name__}] {self._testMethodName}  ", end="")
+
     def test_buffer_size(self):
         buffer = cuPSO.Buffer(4, 3, cuPSO.Device.CPU)
         self.assertEqual(buffer.buffer_size(), 12 * 8)
@@ -86,3 +89,19 @@ class TestBuffer(unittest.TestCase):
         self.assertTrue(str(buffer).startswith("<Buffer shape=(10, 15) device=CPU @"))
         buffer.to(cuPSO.Device.GPU)
         self.assertTrue(str(buffer).startswith("<Buffer shape=(10, 15) device=GPU @"))
+
+
+class TestCURAND(unittest.TestCase):
+    def setUp(self):
+        print(f"\nTesting: [{__class__.__name__}] {self._testMethodName}  ", end="")
+
+    def test_buffer_size(self):
+        states = cuPSO.CURANDStates(100, 0)
+        self.assertEqual(states.num_elem(), 100)
+        self.assertEqual(states.buffer_size(), 4800)
+    
+    def test_clear_buffer(self):
+        states = cuPSO.CURANDStates(100, 0)
+        states.clear()
+        self.assertEqual(states.num_elem(), 0)
+        self.assertEqual(states.buffer_size(), 0)
