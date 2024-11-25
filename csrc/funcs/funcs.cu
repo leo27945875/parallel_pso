@@ -3,6 +3,9 @@
 #include "utils.cuh"
 
 
+__host__ __device__ double pow2(double x){
+    return x * x;
+}
 __host__ __device__ double levy_w_func(double x){
     return 1. + 0.25 * (x - 1.);
 }

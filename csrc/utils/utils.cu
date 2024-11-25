@@ -111,12 +111,9 @@ __host__ void print_matrix(double const *mat, ssize_t nrow, ssize_t ncol){
 }
 
 
-__host__ __device__ ssize_t get_num_block_1d(ssize_t dim){
+__host__ ssize_t get_num_block_1d(ssize_t dim){
     return min(MAX_NUM_BLOCK_1D, cdiv(dim, BLOCK_DIM_1D));
 }
-__host__ __device__ ssize_t cdiv(ssize_t total, ssize_t size){
+__host__ ssize_t cdiv(ssize_t total, ssize_t size){
     return (total + size - 1) / size;
-}
-__host__ __device__ double pow2(double x){
-    return x * x;
 }

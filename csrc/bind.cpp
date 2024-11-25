@@ -1,14 +1,94 @@
 #include <pybind11/pybind11.h>
 
 #include "buffer.cuh"
-// #include "funcs.cuh"
-// #include "velocity.cuh"
-// #include "position.cuh"
-// #include "evolve.cuh"
+#include "funcs.cuh"
+#include "velocity.cuh"
+#include "position.cuh"
+#include "evolve.cuh"
 
 namespace py = pybind11;
 
 using FloatBuffer = Buffer<double>;
+
+
+void binded_calc_fitness_vals(
+    FloatBuffer const &xs, 
+    FloatBuffer       &out
+){
+    levy_function_cuda(
+        xs.cdata_ptr(),
+        out.data_ptr(),
+        xs.nrow(),
+        xs.ncol()
+    );
+}
+
+
+void binded_update_velocities(
+    FloatBuffer const &xs,
+    FloatBuffer       &vs, 
+    FloatBuffer const &local_best_xs, 
+    FloatBuffer const &global_best_x,
+    FloatBuffer       &v_sum_pow2,
+    double             w,
+    double             c0,
+    double             c1,
+    double             v_max,
+    CURANDStates      &rng_states
+){
+    update_velocities_cuda(
+        vs.data_ptr(),
+        xs.cdata_ptr(),
+        local_best_xs.cdata_ptr(),
+        global_best_x.cdata_ptr(),
+        v_sum_pow2.data_ptr(),
+        w,
+        c0,
+        c1,
+        v_max,
+        xs.nrow(),
+        xs.ncol(),
+        rng_states.data_ptr()
+    );
+}
+
+
+void binded_update_positions(
+    FloatBuffer       &xs,
+    FloatBuffer const &vs,
+    double             x_min,
+    double             x_max
+){
+    update_positions_cuda(
+        xs.data_ptr(),
+        vs.cdata_ptr(),
+        x_min,
+        x_max,
+        xs.nrow(),
+        vs.ncol()
+    );
+}
+
+
+ssize_t binded_update_bests(
+    FloatBuffer const &xs,
+    FloatBuffer const &x_fits,
+    FloatBuffer       &local_best_xs,
+    FloatBuffer       &local_best_fits,
+    FloatBuffer       &global_best_x,
+    FloatBuffer       &global_best_fit
+){
+    return update_bests_cuda(
+        xs.cdata_ptr(),
+        x_fits.cdata_ptr(),
+        local_best_xs.data_ptr(),
+        local_best_fits.data_ptr(),
+        global_best_x.data_ptr(),
+        global_best_fit.data_ptr(),
+        xs.nrow(),
+        xs.ncol()
+    );
+}
 
 
 PYBIND11_MODULE(cuPSO, m){
@@ -42,4 +122,9 @@ PYBIND11_MODULE(cuPSO, m){
         .def("num_elem"   , &CURANDStates::num_elem   )
         .def("buffer_size", &CURANDStates::buffer_size)
         .def("clear"      , &CURANDStates::clear      );
+
+    m.def("calc_fitness_vals", &binded_calc_fitness_vals, py::arg("xs"), py::arg("out")                                                                                                                                                                   );
+    m.def("update_velocities", &binded_update_velocities, py::arg("xs"), py::arg("vs")    , py::arg("local_best_xs"), py::arg("global_best_x"), py::arg("v_sum_pow2"), py::arg("w"), py::arg("c0"), py::arg("c1"), py::arg("v_max"), py::arg("rng_states"));
+    m.def("update_positions" , &binded_update_positions , py::arg("xs"), py::arg("vs")    , py::arg("m_min")        , py::arg("x_max")                                                                                                                    );
+    m.def("update_bests"     , &binded_update_bests     , py::arg("xs"), py::arg("x_fits"), py::arg("local_best_xs"), py::arg("local_best_fits"), py::arg("global_best_x"), py::arg("global_best_fit")                                                    );
 }
