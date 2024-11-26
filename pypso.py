@@ -115,7 +115,7 @@ class PSO:
     
     # To be parallelized:
     def update_bests(self) -> None:
-        self.calc_fitness_vals(self.xs, self.x_fits)
+        self.x_fits[:] = np.apply_along_axis(self.func, 1, self.xs)
         for i, (x, curr_fit, best_fit) in enumerate(zip(self.xs, self.x_fits, self.local_best_fits)):
             if curr_fit < best_fit:
                 self.local_best_xs[i] = x.copy()
