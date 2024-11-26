@@ -12,6 +12,10 @@ template <typename ElemType>
 Buffer<ElemType>::Buffer(ssize_t nrow, ssize_t ncol, Device device)
     : m_nrow(nrow), m_ncol(ncol), m_device(device)
 {
+    if (nrow == 0 || ncol == 0){
+        m_buffer = nullptr;
+        return;
+    }
     switch (m_device)
     {
     case Device::CPU:
@@ -208,6 +212,8 @@ void Buffer<ElemType>::clear(){
 
 template <typename ElemType>
 void Buffer<ElemType>::_release(){
+    if (!m_buffer)
+        return;
     switch (m_device)
     {
     case Device::CPU:
@@ -221,7 +227,7 @@ void Buffer<ElemType>::_release(){
 }
 
 template <typename ElemType>
-void Buffer<ElemType>::copy_to_numpy(ndarray_t<ElemType> out) const {
+void Buffer<ElemType>::copy_to_numpy(ndarray_t<ElemType> &out) const {
     ssize_t buf_buffer_size = buffer_size();
     ssize_t npy_buffer_size = out.nbytes();
 
@@ -235,6 +241,24 @@ void Buffer<ElemType>::copy_to_numpy(ndarray_t<ElemType> out) const {
         break;
     case Device::GPU:
         cudaMemcpy(out.mutable_data(), m_buffer, buf_buffer_size, cudaMemcpyDeviceToHost);
+        break;
+    }
+}
+template <typename ElemType>
+void Buffer<ElemType>::copy_from_numpy(ndarray_t<ElemType> const &src) const {
+    ssize_t buf_buffer_size = buffer_size();
+    ssize_t npy_buffer_size = src.nbytes();
+
+    if (npy_buffer_size != buf_buffer_size)
+        throw std::runtime_error("Size of numpy array does not match this buffer.");
+    
+    switch (m_device)
+    {
+    case Device::CPU:
+        memcpy(m_buffer, src.data(), buf_buffer_size);
+        break;
+    case Device::GPU:
+        cudaMemcpy(m_buffer, src.data(), buf_buffer_size, cudaMemcpyHostToDevice);
         break;
     }
 }
@@ -266,7 +290,7 @@ CURANDStates & CURANDStates::operator=(CURANDStates const &other){
     return *this;
 }
 CURANDStates & CURANDStates::operator=(CURANDStates &&other) noexcept {
-    curand_destroy(m_buffer);
+    _release();
     m_buffer       = other.m_buffer;
     m_size         = other.m_size;
     other.m_buffer = nullptr;
@@ -274,7 +298,7 @@ CURANDStates & CURANDStates::operator=(CURANDStates &&other) noexcept {
     return *this;
 }
 CURANDStates::~CURANDStates(){
-    curand_destroy(m_buffer);
+    _release();
 }
 
 cuda_rng_t * CURANDStates::data_ptr() const {
@@ -296,9 +320,15 @@ std::string CURANDStates::to_string() const {
     return ss.str();
 }
 
-void CURANDStates::clear() {
-    curand_destroy(m_buffer);
+void CURANDStates::clear(){
+    _release();
     m_buffer = nullptr;
     m_size   = 0;
+}
+
+void CURANDStates::_release(){
+    if (!m_buffer)
+        return;
+    curand_destroy(m_buffer);
 }
 // end CURANDStates

@@ -117,7 +117,7 @@ __global__ void norm_clip_velocities_kernel(
     if (norm <= v_max)
         return;
     for (ssize_t i = idx; i < dim; i += gridDim.y * blockDim.x){
-        vs[nid * dim + i] /= norm;
+        vs[nid * dim + i] *= (v_max / norm);
     }
 }
 

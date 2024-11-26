@@ -8,12 +8,12 @@ class TestBuffer(unittest.TestCase):
         print(f"\nTesting: [{__class__.__name__}] {self._testMethodName}  ", end="")
 
     def test_buffer_size(self):
-        buffer = cuPSO.Buffer(4, 3, cuPSO.Device.CPU)
-        self.assertEqual(buffer.buffer_size(), 12 * 8)
-        self.assertEqual(buffer.num_elem(), 12)
-        self.assertEqual(buffer.shape(), (4, 3))
-        self.assertEqual(buffer.nrow(), 4)
-        self.assertEqual(buffer.ncol(), 3)
+        buffer = cuPSO.Buffer(200, 50, cuPSO.Device.CPU)
+        self.assertEqual(buffer.buffer_size(), 200 * 50 * 8)
+        self.assertEqual(buffer.num_elem(), 200 * 50)
+        self.assertEqual(buffer.shape(), (200, 50))
+        self.assertEqual(buffer.nrow(), 200)
+        self.assertEqual(buffer.ncol(), 50)
         self.assertEqual(buffer.device(), cuPSO.Device.CPU)
     
     def test_device_definitions(self):
@@ -65,6 +65,20 @@ class TestBuffer(unittest.TestCase):
         buffer.fill(5.)
         buffer.copy_to_numpy(npy_buffer)
         self.assertTrue(np.all(npy_buffer == 5.))
+
+    def test_cpu_from_numpy(self):
+        i_npy_buffer, o_npy_buffer = np.zeros(10 * 15) - 10., np.zeros(10 * 15)
+        buffer = cuPSO.Buffer(10, 15, cuPSO.Device.CPU)
+        buffer.copy_from_numpy(i_npy_buffer)
+        buffer.copy_to_numpy(o_npy_buffer)
+        self.assertTrue(np.all(o_npy_buffer == -10.))
+    
+    def test_gpu_from_numpy(self):
+        i_npy_buffer, o_npy_buffer = np.zeros(10 * 15) - 10., np.zeros(10 * 15)
+        buffer = cuPSO.Buffer(10, 15, cuPSO.Device.GPU)
+        buffer.copy_from_numpy(i_npy_buffer)
+        buffer.copy_to_numpy(o_npy_buffer)
+        self.assertTrue(np.all(o_npy_buffer == -10.))
 
     def test_clear_cpu_buffer(self):
         buffer = cuPSO.Buffer(10, 15, cuPSO.Device.CPU)

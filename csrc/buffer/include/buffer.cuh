@@ -22,7 +22,7 @@ class Buffer
 {
 public:
     Buffer            () = delete;
-    Buffer            (ssize_t nrow, ssize_t ncol, Device device);
+    Buffer            (ssize_t nrow, ssize_t ncol = 1, Device device = Device::GPU);
     Buffer            (Buffer const  &other);
     Buffer            (Buffer       &&other) noexcept;
     Buffer & operator=(Buffer const  &other);
@@ -51,7 +51,8 @@ public:
     void fill (ElemType val);
     void clear();
 
-    void copy_to_numpy(ndarray_t<ElemType> out) const;
+    void copy_to_numpy(ndarray_t<ElemType> &out) const;
+    void copy_from_numpy(ndarray_t<ElemType> const &src) const;
 
 private:
     ElemType  *m_buffer;
@@ -89,4 +90,6 @@ public:
 private:
     cuda_rng_t *m_buffer;
     ssize_t     m_size;
+
+    void _release();
 };

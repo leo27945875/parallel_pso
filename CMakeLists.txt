@@ -55,7 +55,7 @@ message("C++ Source files:\n  ${bind_src_list}")
 add_library(core STATIC ${cuda_src_list})
 set_target_properties(core 
                       PROPERTIES
-                      PREFIX ${CMAKE_PROJECT_NAME}
+                      OUTPUT_NAME "${CMAKE_PROJECT_NAME}"
                       POSITION_INDEPENDENT_CODE ON
                       CUDA_SEPARABLE_COMPILATION ON 
                       CUDA_RESOLVE_DEVICE_SYMBOLS ON)

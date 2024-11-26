@@ -5,6 +5,7 @@
 
 
 #if IS_GLOBAL_BEST_USE_ATOMIC
+
 __global__ void update_best_fits_atomic_kernel(
     double const *x_fits,
     double       *local_best_fits,
@@ -158,29 +159,29 @@ ssize_t update_best_fits_cuda(
     cudaCheckErrors("Failed to allocate memory buffer to 'global_best_idx_cuda_ptr'.");
 
 #if IS_GLOBAL_BEST_USE_ATOMIC
-        cuda_mutex_t *mutex;
-        cuda_create_mutex(&mutex);
-        cudaCheckErrors("Failed to create kernel mutex.");
-        update_best_fits_atomic_kernel<<<num_block_1d, BLOCK_DIM_1D>>>(x_fits_cuda_ptr, local_best_fits_cuda_ptr, global_best_fit_cuda_ptr, global_best_idx_cuda_ptr, num, mutex);
-        cudaCheckErrors("Failed to run 'update_best_fits_kernel'.");
-        cuda_destroy_mutex(mutex);
-        cudaCheckErrors("Failed to destroy kernel mutex.");
+    cuda_mutex_t *mutex;
+    cuda_create_mutex(&mutex);
+    cudaCheckErrors("Failed to create kernel mutex.");
+    update_best_fits_atomic_kernel<<<num_block_1d, BLOCK_DIM_1D>>>(x_fits_cuda_ptr, local_best_fits_cuda_ptr, global_best_fit_cuda_ptr, global_best_idx_cuda_ptr, num, mutex);
+    cudaCheckErrors("Failed to run 'update_best_fits_kernel'.");
+    cuda_destroy_mutex(mutex);
+    cudaCheckErrors("Failed to destroy kernel mutex.");
 #else
-        if (num_block_1d == 1){
-            update_best_fits_reduce_kernel<<<1, BLOCK_DIM_1D>>>(x_fits_cuda_ptr, local_best_fits_cuda_ptr, global_best_fit_cuda_ptr, global_best_idx_cuda_ptr, num);
-            cudaCheckErrors("Failed to run 'update_best_fits_reduce_kernel'.");
-        }else{
-            double *part_global_best_fits_cuda_ptr;
-            ssize_t *part_global_best_idxs_cuda_ptr;
-            cudaMalloc(&part_global_best_fits_cuda_ptr, num_block_1d * sizeof(double)); cudaCheckErrors("Failed to allocate memory buffer 'part_global_best_fits_cuda_ptr'.");
-            cudaMalloc(&part_global_best_idxs_cuda_ptr, num_block_1d * sizeof(ssize_t)); cudaCheckErrors("Failed to allocate memory buffer 'part_global_best_idxs_cuda_ptr'.");
-            update_best_fits_reduce_kernel<<<num_block_1d, BLOCK_DIM_1D>>>(x_fits_cuda_ptr, local_best_fits_cuda_ptr, part_global_best_fits_cuda_ptr, part_global_best_idxs_cuda_ptr, num); 
-            cudaCheckErrors("Failed to run 'update_best_fits_reduce_kernel'.");
-            argmin_global_fits_reduce_kernel<<<1, BLOCK_DIM_1D>>>(part_global_best_fits_cuda_ptr, part_global_best_idxs_cuda_ptr, global_best_fit_cuda_ptr, global_best_idx_cuda_ptr, num); 
-            cudaCheckErrors("Failed to run 'argmin_global_fits_reduce_kernel'.");
-            cudaFree(part_global_best_fits_cuda_ptr); cudaCheckErrors("Failed to free 'part_global_best_fits_cuda_ptr'.");
-            cudaFree(part_global_best_idxs_cuda_ptr); cudaCheckErrors("Failed to free 'part_global_best_idxs_cuda_ptr'.");
-        }
+    if (num_block_1d == 1){
+        update_best_fits_reduce_kernel<<<1, BLOCK_DIM_1D>>>(x_fits_cuda_ptr, local_best_fits_cuda_ptr, global_best_fit_cuda_ptr, global_best_idx_cuda_ptr, num);
+        cudaCheckErrors("Failed to run 'update_best_fits_reduce_kernel'.");
+    }else{
+        double *part_global_best_fits_cuda_ptr;
+        ssize_t *part_global_best_idxs_cuda_ptr;
+        cudaMalloc(&part_global_best_fits_cuda_ptr, num_block_1d * sizeof(double)); cudaCheckErrors("Failed to allocate memory buffer 'part_global_best_fits_cuda_ptr'.");
+        cudaMalloc(&part_global_best_idxs_cuda_ptr, num_block_1d * sizeof(ssize_t)); cudaCheckErrors("Failed to allocate memory buffer 'part_global_best_idxs_cuda_ptr'.");
+        update_best_fits_reduce_kernel<<<num_block_1d, BLOCK_DIM_1D>>>(x_fits_cuda_ptr, local_best_fits_cuda_ptr, part_global_best_fits_cuda_ptr, part_global_best_idxs_cuda_ptr, num); 
+        cudaCheckErrors("Failed to run 'update_best_fits_reduce_kernel'.");
+        argmin_global_fits_reduce_kernel<<<1, BLOCK_DIM_1D>>>(part_global_best_fits_cuda_ptr, part_global_best_idxs_cuda_ptr, global_best_fit_cuda_ptr, global_best_idx_cuda_ptr, num); 
+        cudaCheckErrors("Failed to run 'argmin_global_fits_reduce_kernel'.");
+        cudaFree(part_global_best_fits_cuda_ptr); cudaCheckErrors("Failed to free 'part_global_best_fits_cuda_ptr'.");
+        cudaFree(part_global_best_idxs_cuda_ptr); cudaCheckErrors("Failed to free 'part_global_best_idxs_cuda_ptr'.");
+    }
 #endif
 
     cudaMemcpy(&global_best_idx, global_best_idx_cuda_ptr, sizeof(ssize_t), cudaMemcpyDeviceToHost);
