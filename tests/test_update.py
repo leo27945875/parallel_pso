@@ -7,6 +7,13 @@ class TestUpdateFuncs(unittest.TestCase):
     def setUp(self):
         print(f"\nTesting: [{__class__.__name__}] {self._testMethodName}  ", end="")
 
+    def test_calc_fitness_vals_npy(self):
+        n, d = 203, 83
+        xs_cpu = np.ones((n, d))
+        out_cpu = np.zeros(n)
+        cuPSO.calc_fitness_vals_npy(xs_cpu, out_cpu)
+        self.assertTrue(np.allclose(out_cpu, 0.))
+
     def test_calc_fitness_vals(self):
         n, d = 203, 83
         xs = cuPSO.Buffer(n, d)

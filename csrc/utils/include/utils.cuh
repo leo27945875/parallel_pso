@@ -57,5 +57,7 @@ __host__ void print_matrix(double const *mat, ssize_t nrow, ssize_t ncol);
 __host__ ssize_t get_num_block_1d(ssize_t dim);
 __host__ ssize_t cdiv(ssize_t total, ssize_t size);
 
+__host__ __device__ double pow2(double x);
+
 __global__ void sum_rows_kernel(double const *xs, double *out, ssize_t num, ssize_t dim);
 __global__ void find_global_min_kernel(double const *numbers, double *global_min_num, ssize_t *global_min_idx, ssize_t size, cuda_mutex_t *mutex);

@@ -8,8 +8,8 @@
 
 
 // start Buffer
-template <typename ElemType>
-Buffer<ElemType>::Buffer(ssize_t nrow, ssize_t ncol, Device device)
+template <typename scalar_t>
+Buffer<scalar_t>::Buffer(ssize_t nrow, ssize_t ncol, Device device)
     : m_nrow(nrow), m_ncol(ncol), m_device(device)
 {
     if (nrow == 0 || ncol == 0){
@@ -19,7 +19,7 @@ Buffer<ElemType>::Buffer(ssize_t nrow, ssize_t ncol, Device device)
     switch (m_device)
     {
     case Device::CPU:
-        m_buffer = new ElemType[num_elem()];
+        m_buffer = new scalar_t[num_elem()];
         break;
     case Device::GPU:
         cudaMalloc(&m_buffer, buffer_size()); 
@@ -27,14 +27,14 @@ Buffer<ElemType>::Buffer(ssize_t nrow, ssize_t ncol, Device device)
         break;
     }
 }
-template <typename ElemType>
-Buffer<ElemType>::Buffer(Buffer<ElemType> const &other)
+template <typename scalar_t>
+Buffer<scalar_t>::Buffer(Buffer<scalar_t> const &other)
     : m_nrow(other.m_nrow), m_ncol(other.m_ncol), m_device(other.m_device)
 {
     switch (m_device)
     {
     case Device::CPU:
-        m_buffer = new ElemType[num_elem()];
+        m_buffer = new scalar_t[num_elem()];
         memcpy(m_buffer, other.m_buffer, buffer_size());
         break;
     case Device::GPU:
@@ -43,16 +43,16 @@ Buffer<ElemType>::Buffer(Buffer<ElemType> const &other)
         break;
     }
 }
-template <typename ElemType>
-Buffer<ElemType>::Buffer(Buffer<ElemType> &&other) noexcept 
+template <typename scalar_t>
+Buffer<scalar_t>::Buffer(Buffer<scalar_t> &&other) noexcept 
     : m_nrow(other.m_nrow), m_ncol(other.m_ncol), m_device(other.m_device), m_buffer(other.m_buffer)
 {
     other.m_buffer = nullptr;
     other.m_nrow   = 0;
     other.m_ncol   = 0;
 }
-template <typename ElemType>
-Buffer<ElemType> & Buffer<ElemType>::operator=(Buffer<ElemType> const &other){
+template <typename scalar_t>
+Buffer<scalar_t> & Buffer<scalar_t>::operator=(Buffer<scalar_t> const &other){
     if (!is_same_shape(other))
         throw std::runtime_error("Shapes do not match.");
     if (!is_same_device(other))
@@ -68,8 +68,8 @@ Buffer<ElemType> & Buffer<ElemType>::operator=(Buffer<ElemType> const &other){
     }
     return *this;
 }
-template <typename ElemType>
-Buffer<ElemType> & Buffer<ElemType>::operator=(Buffer<ElemType> &&other) noexcept {
+template <typename scalar_t>
+Buffer<scalar_t> & Buffer<scalar_t>::operator=(Buffer<scalar_t> &&other) noexcept {
     _release();
     m_buffer       = other.m_buffer;
     m_nrow         = other.m_nrow;
@@ -80,99 +80,99 @@ Buffer<ElemType> & Buffer<ElemType>::operator=(Buffer<ElemType> &&other) noexcep
     other.m_ncol   = 0;
     return *this;
 }
-template <typename ElemType>
-Buffer<ElemType>::~Buffer(){
+template <typename scalar_t>
+Buffer<scalar_t>::~Buffer(){
     _release();
 }
 
-template <typename ElemType>
-void Buffer<ElemType>::set_value(ssize_t row, ssize_t col, ElemType val) {
+template <typename scalar_t>
+void Buffer<scalar_t>::set_value(ssize_t row, ssize_t col, scalar_t val) {
     switch (m_device)
     {
     case Device::CPU:
         m_buffer[index_at(row, col)] = val;
         break;
     case Device::GPU:
-        cudaMemcpy(m_buffer + index_at(row, col), &val, sizeof(ElemType), cudaMemcpyHostToDevice);
+        cudaMemcpy(m_buffer + index_at(row, col), &val, sizeof(scalar_t), cudaMemcpyHostToDevice);
         break;
     }
 }
-template <typename ElemType>
-ElemType Buffer<ElemType>::get_value(ssize_t row, ssize_t col) const {
-    ElemType res;
+template <typename scalar_t>
+scalar_t Buffer<scalar_t>::get_value(ssize_t row, ssize_t col) const {
+    scalar_t res;
     switch (m_device)
     {
     case Device::CPU:
         res = m_buffer[index_at(row, col)];
         break;
     case Device::GPU:
-        cudaMemcpy(&res, m_buffer + index_at(row, col), sizeof(ElemType), cudaMemcpyDeviceToHost);
+        cudaMemcpy(&res, m_buffer + index_at(row, col), sizeof(scalar_t), cudaMemcpyDeviceToHost);
         break;
     }
     return res;
 }
-template <typename ElemType>
-ElemType Buffer<ElemType>::operator()(ssize_t row, ssize_t col) const {
+template <typename scalar_t>
+scalar_t Buffer<scalar_t>::operator()(ssize_t row, ssize_t col) const {
     return get_value(row, col);
 }
 
-template <typename ElemType>
-ElemType * Buffer<ElemType>::data_ptr() const {
+template <typename scalar_t>
+scalar_t * Buffer<scalar_t>::data_ptr() const {
     return m_buffer;
 }
-template <typename ElemType>
-ElemType const * Buffer<ElemType>::cdata_ptr() const {
-    return const_cast<ElemType const *>(m_buffer);
+template <typename scalar_t>
+scalar_t const * Buffer<scalar_t>::cdata_ptr() const {
+    return m_buffer;
 }
 
-template <typename ElemType>
-Device Buffer<ElemType>::device() const {
+template <typename scalar_t>
+Device Buffer<scalar_t>::device() const {
     return m_device;
 }
-template <typename ElemType>
-shape_t Buffer<ElemType>::shape() const {
+template <typename scalar_t>
+shape_t Buffer<scalar_t>::shape() const {
     return {m_nrow, m_ncol};
 }
-template <typename ElemType>
-ssize_t Buffer<ElemType>::nrow() const {
+template <typename scalar_t>
+ssize_t Buffer<scalar_t>::nrow() const {
     return m_nrow;
 }
-template <typename ElemType>
-ssize_t Buffer<ElemType>::ncol() const {
+template <typename scalar_t>
+ssize_t Buffer<scalar_t>::ncol() const {
     return m_ncol;
 }
-template <typename ElemType>
-ssize_t Buffer<ElemType>::num_elem() const {
+template <typename scalar_t>
+ssize_t Buffer<scalar_t>::num_elem() const {
     return m_nrow * m_ncol;
 }
-template <typename ElemType>
-ssize_t Buffer<ElemType>::buffer_size() const {
-    return m_nrow * m_ncol * sizeof(ElemType);
+template <typename scalar_t>
+ssize_t Buffer<scalar_t>::buffer_size() const {
+    return m_nrow * m_ncol * sizeof(scalar_t);
 }
-template <typename ElemType>
-ssize_t Buffer<ElemType>::index_at(ssize_t row, ssize_t col) const {
+template <typename scalar_t>
+ssize_t Buffer<scalar_t>::index_at(ssize_t row, ssize_t col) const {
     return row * m_ncol + col;
 }
-template <typename ElemType>
-bool Buffer<ElemType>::is_same_shape(Buffer<ElemType> const &other) const {
+template <typename scalar_t>
+bool Buffer<scalar_t>::is_same_shape(Buffer<scalar_t> const &other) const {
     return m_nrow == other.nrow() && m_ncol == other.ncol();
 }
-template <typename ElemType>
-bool Buffer<ElemType>::is_same_device(Buffer<ElemType> const &other) const {
+template <typename scalar_t>
+bool Buffer<scalar_t>::is_same_device(Buffer<scalar_t> const &other) const {
     return m_device == other.device();
 }
-template <typename ElemType>
-std::string Buffer<ElemType>::to_string() const {
+template <typename scalar_t>
+std::string Buffer<scalar_t>::to_string() const {
     std::stringstream ss;
     ss << "<Buffer shape=(" << m_nrow << ", " << m_ncol << ") device=" << ((m_device == Device::CPU)? "CPU": "GPU") << " @" << (uintptr_t)this << ">";
     return ss.str();
 }
 
-template <typename ElemType>
-void Buffer<ElemType>::to(Device device){
+template <typename scalar_t>
+void Buffer<scalar_t>::to(Device device){
     if (m_device == device)
         return;
-    ElemType *new_buffer;
+    scalar_t *new_buffer;
     switch (m_device)
     {
     case Device::CPU:
@@ -181,7 +181,7 @@ void Buffer<ElemType>::to(Device device){
         delete[] m_buffer;
         break;
     case Device::GPU:
-        new_buffer = new ElemType[num_elem()];
+        new_buffer = new scalar_t[num_elem()];
         cudaMemcpy(new_buffer, m_buffer, buffer_size(), cudaMemcpyDeviceToHost);
         cudaFree(m_buffer);
         break;
@@ -189,29 +189,29 @@ void Buffer<ElemType>::to(Device device){
     m_buffer = new_buffer;
     m_device = device;
 }
-template <typename ElemType>
-void Buffer<ElemType>::fill(ElemType val){
+template <typename scalar_t>
+void Buffer<scalar_t>::fill(scalar_t val){
     switch (m_device)
     {
     case Device::CPU:
         std::fill_n(m_buffer, num_elem(), val);
         break;
     case Device::GPU:
-        thrust::device_ptr<ElemType> dev_ptr(m_buffer);
+        thrust::device_ptr<scalar_t> dev_ptr(m_buffer);
         thrust::fill_n(dev_ptr, num_elem(), val); 
         break;
     }
 }
-template <typename ElemType>
-void Buffer<ElemType>::clear(){
+template <typename scalar_t>
+void Buffer<scalar_t>::clear(){
     _release();
     m_buffer = nullptr;
     m_nrow   = 0;
     m_ncol   = 0;
 }
 
-template <typename ElemType>
-void Buffer<ElemType>::_release(){
+template <typename scalar_t>
+void Buffer<scalar_t>::_release(){
     if (!m_buffer)
         return;
     switch (m_device)
@@ -226,8 +226,8 @@ void Buffer<ElemType>::_release(){
     }
 }
 
-template <typename ElemType>
-void Buffer<ElemType>::copy_to_numpy(ndarray_t<ElemType> &out) const {
+template <typename scalar_t>
+void Buffer<scalar_t>::copy_to_numpy(ndarray_t<scalar_t> &out) const {
     ssize_t buf_buffer_size = buffer_size();
     ssize_t npy_buffer_size = out.nbytes();
 
@@ -244,8 +244,8 @@ void Buffer<ElemType>::copy_to_numpy(ndarray_t<ElemType> &out) const {
         break;
     }
 }
-template <typename ElemType>
-void Buffer<ElemType>::copy_from_numpy(ndarray_t<ElemType> const &src) const {
+template <typename scalar_t>
+void Buffer<scalar_t>::copy_from_numpy(ndarray_t<scalar_t> const &src) const {
     ssize_t buf_buffer_size = buffer_size();
     ssize_t npy_buffer_size = src.nbytes();
 
@@ -305,7 +305,7 @@ cuda_rng_t * CURANDStates::data_ptr() const {
     return m_buffer;
 }
 cuda_rng_t const * CURANDStates::cdata_ptr() const {
-    return const_cast<cuda_rng_t const *>(m_buffer);
+    return m_buffer;
 }
 
 ssize_t CURANDStates::num_elem() const {

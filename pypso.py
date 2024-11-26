@@ -22,18 +22,18 @@ class PSO:
         x_max : float                         = 5.,
         x_min : float                         = -5.,
     ) -> None:
-        self.func    = func
-        self.dim     = dim
-        self.n       = n
-        self.iters   = iters
-        self.c0      = c0
-        self.c1      = c1
-        self.w       = w_max
-        self.w_max   = w_max
-        self.w_min   = w_min
-        self.v_max   = v_max
-        self.x_max   = x_max
-        self.x_min   = x_min
+        self.func  = func
+        self.dim   = dim
+        self.n     = n
+        self.iters = iters
+        self.c0    = c0
+        self.c1    = c1
+        self.w     = w_max
+        self.w_max = w_max
+        self.w_min = w_min
+        self.v_max = v_max
+        self.x_max = x_max
+        self.x_min = x_min
 
         self.xs = np.array([x_min + (x_max - x_min) * np.random.rand(self.dim) for _ in range(n)])
         self.x_fits = np.zeros(n)

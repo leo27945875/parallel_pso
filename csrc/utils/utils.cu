@@ -62,7 +62,6 @@ __global__ void get_rand_numbers_kernel(ssize_t size, cuda_rng_t *rng_states, do
         rng_states[idx] = thread_rng_state;
     }
 }
-
 __global__ void sum_rows_kernel(double const *xs, double *out, ssize_t num, ssize_t dim){
     __shared__ double smem[BLOCK_DIM_1D];
     int nid = blockIdx.x;
@@ -83,7 +82,6 @@ __global__ void sum_rows_kernel(double const *xs, double *out, ssize_t num, ssiz
         atomicAdd(out + nid, smem[0]);
 }
 
-
 __host__ double rand_number(double range){
     return (static_cast<double>(rand()) / RAND_MAX) * (2. * range) - range;
 }
@@ -101,7 +99,6 @@ __host__ void get_curand_numbers(ssize_t size, cuda_rng_t *rng_states, double *r
     cudaCheckErrors("Failed to run 'get_rand_numbers_kernel'.");
 }
 
-
 __host__ void print_matrix(double const *mat, ssize_t nrow, ssize_t ncol){
     for (ssize_t i = 0; i < nrow; i++){
         for (ssize_t j = 0; j < ncol; j++)
@@ -109,11 +106,12 @@ __host__ void print_matrix(double const *mat, ssize_t nrow, ssize_t ncol){
         printf("\n");
     }
 }
-
-
 __host__ ssize_t get_num_block_1d(ssize_t dim){
     return min(MAX_NUM_BLOCK_1D, cdiv(dim, BLOCK_DIM_1D));
 }
 __host__ ssize_t cdiv(ssize_t total, ssize_t size){
     return (total + size - 1) / size;
+}
+__host__ __device__ double pow2(double x){
+    return x * x;
 }

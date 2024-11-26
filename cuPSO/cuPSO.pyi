@@ -1,6 +1,6 @@
 from __future__ import annotations
 import numpy
-from typing import Self, ClassVar, Any
+from typing import Self, ClassVar, Callable, Any
 
 
 __all__ = [
@@ -10,8 +10,12 @@ __all__ = [
     'calc_fitness_vals', 
     'update_bests', 
     'update_positions', 
-    'update_velocities'
+    'update_velocities',
+    'func_t'
 ]
+
+
+func_t = Callable[[numpy.ndarray[numpy.float64]], float]
 
 
 class Buffer:
@@ -112,8 +116,13 @@ class Device:
         ...
 
 
+def calc_fitness_val_npy(x: numpy.ndarray[numpy.float64]) -> None:
+    ...
+def calc_fitness_vals_npy(xs: numpy.ndarray[numpy.float64], out: numpy.ndarray[numpy.float64]) -> None:
+    ...
 def calc_fitness_vals(xs: Buffer, out: Buffer) -> None:
     ...
+
 def update_bests(xs: Buffer, x_fits: Buffer, local_best_xs: Buffer, local_best_fits: Buffer, global_best_x: Buffer, global_best_fit: Buffer) -> int:
     ...
 def update_positions(xs: Buffer, vs: Buffer, x_min: float, x_max: float) -> None:

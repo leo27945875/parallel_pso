@@ -8,7 +8,7 @@ test:
 	python -m unittest
 
 clean:
-	rm -rf build/* ${LIB_NAME}/${LIB_NAME}$(shell python3-config --extension-suffix) ${LIB_NAME}/lib${LIB_NAME}core.a
+	rm -rf build/* ${LIB_NAME}/${LIB_NAME}$(shell python3-config --extension-suffix) ${LIB_NAME}/lib${LIB_NAME}.a
 
 stubs:
 	PYTHONPATH=./ pybind11-stubgen ${LIB_NAME}

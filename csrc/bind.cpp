@@ -8,9 +8,26 @@
 
 namespace py = pybind11;
 
-using FloatBuffer = Buffer<double>;
+using scalar_t = double;
+using FloatBuffer = Buffer<scalar_t>;
 
 
+scalar_t binded_calc_fitness_val_npy(
+    ndarray_t<scalar_t> const &x
+){
+    return levy(x.data(), x.shape(0));
+}
+void binded_calc_fitness_vals_npy(
+    ndarray_t<scalar_t> const &xs,
+    ndarray_t<scalar_t>       &out
+){
+    levy_function_cpu(
+        xs.data(),
+        out.mutable_data(),
+        xs.shape(0),
+        xs.shape(1)
+    );
+}
 void binded_calc_fitness_vals(
     FloatBuffer const &xs, 
     FloatBuffer       &out
@@ -22,7 +39,6 @@ void binded_calc_fitness_vals(
         xs.ncol()
     );
 }
-
 
 void binded_update_velocities(
     FloatBuffer const &xs,
@@ -52,7 +68,6 @@ void binded_update_velocities(
     );
 }
 
-
 void binded_update_positions(
     FloatBuffer       &xs,
     FloatBuffer const &vs,
@@ -68,7 +83,6 @@ void binded_update_positions(
         vs.ncol()
     );
 }
-
 
 ssize_t binded_update_bests(
     FloatBuffer const &xs,
@@ -124,7 +138,10 @@ PYBIND11_MODULE(cuPSO, m){
         .def("buffer_size", &CURANDStates::buffer_size)
         .def("clear"      , &CURANDStates::clear      );
 
-    m.def("calc_fitness_vals", &binded_calc_fitness_vals, py::arg("xs"), py::arg("out")                                                                                                                                                                   );
+    m.def("calc_fitness_val_npy" , &binded_calc_fitness_val_npy , py::arg("x")                 );
+    m.def("calc_fitness_vals_npy", &binded_calc_fitness_vals_npy, py::arg("xs"), py::arg("out"));
+    m.def("calc_fitness_vals"    , &binded_calc_fitness_vals    , py::arg("xs"), py::arg("out"));
+    
     m.def("update_velocities", &binded_update_velocities, py::arg("xs"), py::arg("vs")    , py::arg("local_best_xs"), py::arg("global_best_x"), py::arg("v_sum_pow2"), py::arg("w"), py::arg("c0"), py::arg("c1"), py::arg("v_max"), py::arg("rng_states"));
     m.def("update_positions" , &binded_update_positions , py::arg("xs"), py::arg("vs")    , py::arg("x_min")        , py::arg("x_max")                                                                                                                    );
     m.def("update_bests"     , &binded_update_bests     , py::arg("xs"), py::arg("x_fits"), py::arg("local_best_xs"), py::arg("local_best_fits"), py::arg("global_best_x"), py::arg("global_best_fit")                                                    );

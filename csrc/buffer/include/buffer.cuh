@@ -17,7 +17,7 @@ enum class Device {
     GPU
 };
 
-template <typename ElemType>
+template <typename scalar_t>
 class Buffer 
 {
 public:
@@ -29,12 +29,12 @@ public:
     Buffer & operator=(Buffer       &&other) noexcept;
     ~Buffer           ();
 
-    void     set_value (ssize_t row, ssize_t col, ElemType val);
-    ElemType get_value (ssize_t row, ssize_t col) const;
-    ElemType operator()(ssize_t row, ssize_t col) const;
+    void     set_value (ssize_t row, ssize_t col, scalar_t val);
+    scalar_t get_value (ssize_t row, ssize_t col) const;
+    scalar_t operator()(ssize_t row, ssize_t col) const;
 
-    ElemType *       data_ptr () const;
-    ElemType const * cdata_ptr() const; 
+    scalar_t *       data_ptr () const;
+    scalar_t const * cdata_ptr() const; 
 
     Device      device        () const;
     shape_t     shape         () const;
@@ -48,14 +48,14 @@ public:
     std::string to_string     () const;
 
     void to   (Device device);
-    void fill (ElemType val);
+    void fill (scalar_t val);
     void clear();
 
-    void copy_to_numpy(ndarray_t<ElemType> &out) const;
-    void copy_from_numpy(ndarray_t<ElemType> const &src) const;
+    void copy_to_numpy(ndarray_t<scalar_t> &out) const;
+    void copy_from_numpy(ndarray_t<scalar_t> const &src) const;
 
 private:
-    ElemType  *m_buffer;
+    scalar_t  *m_buffer;
     ssize_t    m_nrow;
     ssize_t    m_ncol;
     Device     m_device;
