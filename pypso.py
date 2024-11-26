@@ -161,7 +161,7 @@ def main():
         make_animation(pso.step, iters, fig, line, verbose, save_path=f"assets/PSO_{func.__name__}--{n=}_{iters=}.gif")
     else:
         t = timeit.timeit(lambda: pso.run(verbose), number=1)
-        print(f"Total time = {t}")
+        print(f"Total time = {t}(s)")
     
 
 if __name__ == "__main__":
