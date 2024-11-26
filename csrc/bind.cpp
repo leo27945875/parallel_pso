@@ -128,6 +128,7 @@ PYBIND11_MODULE(cuPSO, m){
         .def("copy_from_numpy", &FloatBuffer::copy_from_numpy , py::arg("src")   )
         .def("to"             , &FloatBuffer::to              , py::arg("device"))
         .def("fill"           , &FloatBuffer::fill            , py::arg("val")   )
+        .def("show"           , &FloatBuffer::show                               )
         .def("clear"          , &FloatBuffer::clear                              );
     
     py::class_<CURANDStates>(m, "CURANDStates")

@@ -69,8 +69,10 @@ void levy_function_cuda(double const *xs_cuda_ptr, double *out_cuda_ptr, ssize_t
     ssize_t num_block_per_x = get_num_block_1d(dim);
     dim3 grid_dims(num, num_block_per_x);
     dim3 block_dims(BLOCK_DIM_1D);
+    cudaMemset(out_cuda_ptr, 0, num * sizeof(double));
+    cudaCheckErrors("Failed to zero out buffer 'out_cuda_ptr'.");
     levy_function_kernel<<<grid_dims, block_dims>>>(xs_cuda_ptr, out_cuda_ptr, num, dim); 
-    cudaCheckErrors("Running 'levy_function_kernel' failed.");
+    cudaCheckErrors("Failed to run 'levy_function_kernel'.");
 }
 
 void levy_function_cpu(double const *xs, double *out, ssize_t num, ssize_t dim){

@@ -47,9 +47,12 @@ class PSO:
         self.vs = np.zeros((n, self.dim))
 
     def run(self, verbose: int = 1) -> tuple[np.ndarray, float]:
+        if verbose:
+            self.print_init_info(verbose)
         for i in range(self.iters):
             self.step(i, verbose)
-        return self.global_best_x, self.global_best_fit
+        if verbose:
+            self.print_global_info(verbose)
     
     def step(self, i: int, verbose: int = 1, plt_line: Artist | None = None) -> Iterable[Artist] | None:
         self.update_velocities()
@@ -57,20 +60,35 @@ class PSO:
         self.update_bests()
         self.update_inertia_weight(i + 1)
         if verbose:
-            self.print_iter_info(i + 1)
+            self.print_iter_info(i + 1, verbose)
         if plt_line:
             xp, yp, zp = calc_plot_points(self.xs, self.func)
             plt_line.set_data_3d(xp, yp, zp)
             return [plt_line]
     
-    def print_iter_info(self, i: int) -> None:
-        print("-" * 50 + f" {i} " + "-" * 50)
-        print(f"Inertia weight = {self.w}")
+    def print_init_info(self, verbose: int) -> None:
+        print("=" * 100)
+        print("Init info:")
+        print(f"Basic info : num = {self.n}, dim = {self.dim}, iterations = {self.iters}")
+        if (verbose >= 2):
+            print(f"Global best point: {[round(float(x), 4) for x in self.global_best_x]}")
+        print(f"Global best fitness = {self.global_best_fit}")
+        print("=" * 100)
+    
+    def print_iter_info(self, i: int, verbose: int) -> None:
+        print("-" * 50 + f" {i} / {self.iters} " + "-" * 50)
+        if (verbose >= 2): 
+            print(f"Inertia weight = {self.w}")
+            print(f"Global best point: {[round(float(x), 4) for x in self.global_best_x]}")
         print(f"Global best fitness = {self.global_best_fit}")
 
-    def print_global_info(self) -> None:
-        print(f"Global best point: {[round(float(x), 4) for x in self.global_best_x]}")
+    def print_global_info(self, verbose: int) -> None:
+        print("=" * 100)
+        print("Final result:")
+        if verbose >= 2:
+            print(f"Global best point: {[round(float(x), 4) for x in self.global_best_x]}")
         print(f"Global best fitness = {self.global_best_fit}")
+        print("=" * 100)
 
     def init_global_info(self) -> tuple[np.ndarray, float]:
         global_min_idx = np.argmin(self.x_fits)
@@ -113,13 +131,13 @@ class PSO:
 def main():
     seed        = None
     func        = levy_func
-    dim         = 10
-    n           = 500
-    iters       = 1000
+    dim         = 2
+    n           = dim * 2**5
+    iters       = dim * 2**8
     x_min       = -20
     x_max       = 20.
     v_max       = 1.
-    is_make_ani = False
+    is_make_ani = True
     markersize  = 4
     verbose     = 1
 
@@ -140,16 +158,11 @@ def main():
     if is_make_ani:
         assert dim == 2
         fig, ax, surf, line = plot_func(func, pso.xs, x_min, x_max, markersize=markersize, is_show=False)
-        make_animation(pso.step, iters, fig, line, verbose, save_path=f"PSO_{func.__name__}.png")
+        make_animation(pso.step, iters, fig, line, verbose, save_path=f"assets/PSO_{func.__name__}--{n=}_{iters=}.gif")
     else:
         t = timeit.timeit(lambda: pso.run(verbose), number=1)
-        print("-" * 100)
         print(f"Total time = {t}")
-        if dim == 2: 
-            plot_func(func, pso.xs, x_min, x_max, markersize=markersize, is_show=True)
     
-    pso.print_global_info()
-
 
 if __name__ == "__main__":
 

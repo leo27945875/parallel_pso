@@ -1,3 +1,4 @@
+#include <iomanip>
 #include <sstream>
 #include <algorithm>
 #include <stdexcept>
@@ -200,6 +201,16 @@ void Buffer<scalar_t>::fill(scalar_t val){
         thrust::device_ptr<scalar_t> dev_ptr(m_buffer);
         thrust::fill_n(dev_ptr, num_elem(), val); 
         break;
+    }
+}
+template<typename scalar_t>
+void Buffer<scalar_t>::show(){
+    for (ssize_t i = 0; i < m_nrow; i++)
+    for (ssize_t j = 0; j < m_ncol; j++){
+        if (j == m_ncol - 1)
+            std::cout << std::fixed << std::setprecision(8) << get_value(i, j) << std::endl;
+        else
+            std::cout << std::fixed << std::setprecision(8) << get_value(i, j) << ", ";
     }
 }
 template <typename scalar_t>

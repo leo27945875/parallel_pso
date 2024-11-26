@@ -94,14 +94,15 @@ class PSO_CUDA:
 
     def init_global_info(self, xs: np.ndarray, x_fits: np.ndarray) -> tuple[np.ndarray, float]:
         global_best_idx = np.argmin(x_fits)
-        return xs[global_best_idx], x_fits[global_best_idx]
+        return xs[global_best_idx], x_fits[global_best_idx: global_best_idx + 1]
 
     def run(self, verbose: int = 1) -> tuple[np.ndarray, float]:
+        if verbose:
+            self.print_init_info(verbose)
         for i in range(self.iters):
             self.step(i, verbose)
-        self.d_global_best_x.copy_to_numpy(self.global_best_x)
-        self.d_global_best_fit.copy_to_numpy(self.global_best_fit)
-        return self.global_best_x, self.global_best_fit
+        if verbose:
+            self.print_global_info(verbose)
     
     def step(self, i: int, verbose: int = 1, plt_line: Artist | None = None) -> Iterable[Artist] | None:
         self.update_velocities()
@@ -109,25 +110,40 @@ class PSO_CUDA:
         self.update_bests()
         self.update_inertia_weight(i + 1)
         if verbose:
-            self.print_iter_info(i + 1)
+            self.print_iter_info(i + 1, verbose)
         if plt_line:
+            self.d_xs.copy_to_numpy(self.xs)
             xp, yp, zp = calc_plot_points(self.xs, self.func)
             plt_line.set_data_3d(xp, yp, zp)
             return [plt_line]
     
-    def print_iter_info(self, i: int) -> None:
-        self.d_global_best_x.copy_to_numpy(self.global_best_x)
-        self.d_global_best_fit.copy_to_numpy(self.global_best_fit)
-        print("-" * 50 + f" {i} " + "-" * 50)
-        print(f"Inertia weight = {self.w}")
-        print(f"Global best point: {[round(float(x), 4) for x in self.global_best_x]}")
-        print(f"Global best fitness = {self.global_best_fit}")
+    def print_init_info(self, verbose: int) -> None:
+        print("=" * 100)
+        print("Init info:")
+        print(f"Basic info : num = {self.n}, dim = {self.dim}, iterations = {self.iters}")
+        if (verbose >= 2):
+            print(f"Global best point: {[round(float(x), 4) for x in self.global_best_x]}")
+        print(f"Global best fitness = {self.global_best_fit[0]}")
+        print("=" * 100)
 
-    def print_global_info(self) -> None:
+    def print_iter_info(self, i: int, verbose: int) -> None:
+        print("-" * 50 + f" {i} / {self.iters} " + "-" * 50)
+        self.d_global_best_fit.copy_to_numpy(self.global_best_fit)
+        if (verbose >= 2): 
+            self.d_global_best_x.copy_to_numpy(self.global_best_x)
+            print(f"Inertia weight = {self.w}")
+            print(f"Global best point: {[round(float(x), 4) for x in self.global_best_x]}")
+        print(f"Global best fitness = {self.global_best_fit[0]}")
+
+    def print_global_info(self, verbose: int) -> None:
         self.d_global_best_x.copy_to_numpy(self.global_best_x)
         self.d_global_best_fit.copy_to_numpy(self.global_best_fit)
-        print(f"Global best point: {[round(float(x), 4) for x in self.global_best_x]}")
-        print(f"Global best fitness = {self.global_best_fit}")
+        print("=" * 100)
+        print("Final result:")
+        if verbose >= 2:
+            print(f"Global best point: {[round(float(x), 4) for x in self.global_best_x]}")
+        print(f"Global best fitness = {self.global_best_fit[0]}")
+        print("=" * 100)
     
     def update_velocities(self) -> None:
         cuPSO.update_velocities(
@@ -151,43 +167,40 @@ class PSO_CUDA:
 
 def main():
     seed        = None
-    dim         = 10
-    n           = 500
-    iters       = 1000
+    dim         = 2
+    n           = dim * 2**5
+    iters       = dim * 2**8
     x_min       = -20
     x_max       = 20.
     v_max       = 1.
-    is_make_ani = False
+    is_make_ani = True
     markersize  = 4
     verbose     = 1
+    device      = cuPSO.Device.GPU
 
     if seed is not None:
         random.seed(seed)
         np.random.seed(seed)
 
     pso = PSO_CUDA(
-        dim   = dim,
-        n     = n,
-        iters = iters,
-        x_min = x_min,
-        x_max = x_max,
-        v_max = v_max
+        dim    = dim,
+        n      = n,
+        iters  = iters,
+        x_min  = x_min,
+        x_max  = x_max,
+        v_max  = v_max,
+        device = device
     )
 
     if is_make_ani:
         assert dim == 2
         fig, ax, surf, line = plot_func(pso.func, pso.xs, x_min, x_max, markersize=markersize, is_show=False)
-        make_animation(pso.step, iters, fig, line, verbose, save_path=f"PSO_{pso.func.__name__}.png")
+        make_animation(pso.step, iters, fig, line, verbose, save_path=f"assets/cuPSO_{pso.func.__name__}--{n=}_{iters=}.gif")
     else:
         t = timeit.timeit(lambda: pso.run(verbose), number=1)
-        print("-" * 100)
         print(f"Total time = {t}")
-        if dim == 2: 
-            plot_func(pso.func, pso.xs, x_min, x_max, markersize=markersize, is_show=True)
     
-    pso.print_global_info()
-
-
+    
 if __name__ == "__main__":
 
     main()

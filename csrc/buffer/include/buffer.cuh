@@ -49,6 +49,7 @@ public:
 
     void to   (Device device);
     void fill (scalar_t val);
+    void show();
     void clear();
 
     void copy_to_numpy(ndarray_t<scalar_t> &out) const;
