@@ -131,13 +131,13 @@ class PSO:
 def main():
     seed        = None
     func        = levy_func
-    dim         = 2
+    dim         = 3 * 2**5
     n           = dim * 2**5
-    iters       = dim * 2**8
+    iters       = 100
     x_min       = -20
     x_max       = 20.
-    v_max       = 1.
-    is_make_ani = True
+    v_max       = 5.
+    is_make_ani = False
     markersize  = 4
     verbose     = 1
 
