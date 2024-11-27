@@ -18,16 +18,16 @@ void test_curand(
     int                n_loop = 5,
     unsigned long long seed   = 0
 ){
-    double *h_res, *d_res;
+    scalar_t *h_res, *d_res;
     cuda_rng_t *d_states;
     
-    h_res = new double[num];
-    cudaMalloc(&d_res, num * sizeof(double));
+    h_res = new scalar_t[num];
+    cudaMalloc(&d_res, num * sizeof(scalar_t));
 
     curand_setup(num, seed, &d_states);
     for (int loop = 0; loop < n_loop; loop++){
         get_curand_numbers(num, d_states, d_res);
-        cudaMemcpy(h_res, d_res, num * sizeof(double), cudaMemcpyDeviceToHost);
+        cudaMemcpy(h_res, d_res, num * sizeof(scalar_t), cudaMemcpyDeviceToHost);
         std::cout << "cuRAND test:\n";
         for (ssize_t i = 0; i < num; i++)
             std::cout << h_res[i] << ", ";
@@ -45,15 +45,15 @@ void test_mutex(
 ){
     srand(time(NULL));
 
-    double *h_arr, *d_arr;
+    scalar_t *h_arr, *d_arr;
 
-    double h_global_min_num = DBL_MAX, real_global_min_num = DBL_MAX;
+    scalar_t h_global_min_num = DBL_MAX, real_global_min_num = DBL_MAX;
     ssize_t h_global_min_idx = num, real_global_min_idx = num;
 
-    double *d_global_min_num;
+    scalar_t *d_global_min_num;
     ssize_t *d_global_min_idx;
 
-    h_arr = new double[num];
+    h_arr = new scalar_t[num];
     for (ssize_t i = 0; i < num; i++){
         h_arr[i] = rand_number(10.);
         if (h_arr[i] < real_global_min_num){
@@ -62,12 +62,12 @@ void test_mutex(
         }
     }
     
-    cudaMalloc(&d_arr, num * sizeof(double));
-    cudaMalloc(&d_global_min_num, sizeof(double));
+    cudaMalloc(&d_arr, num * sizeof(scalar_t));
+    cudaMalloc(&d_global_min_num, sizeof(scalar_t));
     cudaMalloc(&d_global_min_idx, sizeof(ssize_t));
 
-    cudaMemcpy(d_arr, h_arr, num * sizeof(double), cudaMemcpyHostToDevice);
-    cudaMemcpy(d_global_min_num, &h_global_min_num, sizeof(double), cudaMemcpyHostToDevice);
+    cudaMemcpy(d_arr, h_arr, num * sizeof(scalar_t), cudaMemcpyHostToDevice);
+    cudaMemcpy(d_global_min_num, &h_global_min_num, sizeof(scalar_t), cudaMemcpyHostToDevice);
     cudaMemcpy(d_global_min_idx, &h_global_min_idx, sizeof(ssize_t), cudaMemcpyHostToDevice);
 
     cuda_mutex_t *mutex;
@@ -75,7 +75,7 @@ void test_mutex(
     find_global_min_kernel<<<get_num_block_1d(num), BLOCK_DIM_1D>>>(d_arr, d_global_min_num, d_global_min_idx, num, mutex);
     cuda_destroy_mutex(mutex);
 
-    cudaMemcpy(&h_global_min_num, d_global_min_num, sizeof(double), cudaMemcpyDeviceToHost);
+    cudaMemcpy(&h_global_min_num, d_global_min_num, sizeof(scalar_t), cudaMemcpyDeviceToHost);
     cudaMemcpy(&h_global_min_idx, d_global_min_idx, sizeof(ssize_t), cudaMemcpyDeviceToHost);
 
     for (ssize_t i = 0; i < num; i++)
@@ -95,29 +95,29 @@ void test_mutex(
 void test_levy_function(
     ssize_t num        = 1000,
     ssize_t dim        = 500,
-    double tol         = 1e-5,
+    scalar_t tol         = 1e-5,
     bool   is_show_out = true
 ){
 
-    double *xs, *out_cpu, *out_cuda;
-    double *d_xs, *d_out;
+    scalar_t *xs, *out_cpu, *out_cuda;
+    scalar_t *d_xs, *d_out;
 
     srand(time(NULL));
 
-    xs       = new double[num * dim];
-    out_cpu  = new double[num];
-    out_cuda = new double[num];
+    xs       = new scalar_t[num * dim];
+    out_cpu  = new scalar_t[num];
+    out_cuda = new scalar_t[num];
 
     for (ssize_t i = 0; i < num * dim; i++) 
         xs[i] = rand_number();
     
     levy_function_cpu(xs, out_cpu, num, dim);
 
-    cudaMalloc(&d_xs, num * dim * sizeof(double));
-    cudaMalloc(&d_out, num * sizeof(double));
-    cudaMemcpy(d_xs, xs, num * dim * sizeof(double), cudaMemcpyHostToDevice);
+    cudaMalloc(&d_xs, num * dim * sizeof(scalar_t));
+    cudaMalloc(&d_out, num * sizeof(scalar_t));
+    cudaMemcpy(d_xs, xs, num * dim * sizeof(scalar_t), cudaMemcpyHostToDevice);
     levy_function_cuda(d_xs, d_out, num, dim);
-    cudaMemcpy(out_cuda, d_out, num * sizeof(double), cudaMemcpyDeviceToHost);
+    cudaMemcpy(out_cuda, d_out, num * sizeof(scalar_t), cudaMemcpyDeviceToHost);
 
     if (is_show_out){
         std::cout << "\nLevy results: (CPU)" << std::endl;
@@ -148,29 +148,29 @@ void test_levy_function(
 void test_update_velocity(
     ssize_t             num           = 10,
     ssize_t             dim           = 500,
-    double             v_max          = 1.,
+    scalar_t             v_max          = 1.,
     bool               is_norm_buffer = true,
     unsigned long long seed           = 0
 ){
     cuda_rng_t *d_states;
-    double *h_vs, *h_xs, *h_local_best_xs, *h_global_best_x, *h_norm_buffer;
-    double *d_vs, *d_xs, *d_local_best_xs, *d_global_best_x, *d_norm_buffer;
+    scalar_t *h_vs, *h_xs, *h_local_best_xs, *h_global_best_x, *h_norm_buffer;
+    scalar_t *d_vs, *d_xs, *d_local_best_xs, *d_global_best_x, *d_norm_buffer;
 
     curand_setup(num * dim, seed, &d_states);
 
-    h_vs            = new double[num * dim];
-    h_xs            = new double[num * dim];
-    h_local_best_xs = new double[num * dim];
-    h_global_best_x = new double[dim];
-    h_norm_buffer   = new double[num];
+    h_vs            = new scalar_t[num * dim];
+    h_xs            = new scalar_t[num * dim];
+    h_local_best_xs = new scalar_t[num * dim];
+    h_global_best_x = new scalar_t[dim];
+    h_norm_buffer   = new scalar_t[num];
 
     for (ssize_t i = 0; i < num; i++){
         h_norm_buffer[i] = 0.;
         for (ssize_t j = 0; j < dim; j++){
             h_vs           [i * dim + j] = 0.;
-            h_xs           [i * dim + j] = static_cast<double>(i);
-            h_local_best_xs[i * dim + j] = static_cast<double>(num / 2);
-            h_global_best_x[          j] = static_cast<double>(num / 2);
+            h_xs           [i * dim + j] = static_cast<scalar_t>(i);
+            h_local_best_xs[i * dim + j] = static_cast<scalar_t>(num / 2);
+            h_global_best_x[          j] = static_cast<scalar_t>(num / 2);
         }
     }
 
@@ -181,25 +181,25 @@ void test_update_velocity(
     std::cout << "vs:\n"    ; print_matrix(h_vs, num, dim)           ; std::cout << std::endl;
     std::cout << std::endl;
 
-    cudaMalloc(&d_vs           , num * dim * sizeof(double));
-    cudaMalloc(&d_xs           , num * dim * sizeof(double));
-    cudaMalloc(&d_local_best_xs, num * dim * sizeof(double));
-    cudaMalloc(&d_global_best_x,       dim * sizeof(double));
-    cudaMalloc(&d_norm_buffer  , num       * sizeof(double));
+    cudaMalloc(&d_vs           , num * dim * sizeof(scalar_t));
+    cudaMalloc(&d_xs           , num * dim * sizeof(scalar_t));
+    cudaMalloc(&d_local_best_xs, num * dim * sizeof(scalar_t));
+    cudaMalloc(&d_global_best_x,       dim * sizeof(scalar_t));
+    cudaMalloc(&d_norm_buffer  , num       * sizeof(scalar_t));
 
-    cudaMemcpy(d_vs           , h_vs           , num * dim * sizeof(double), cudaMemcpyHostToDevice);
-    cudaMemcpy(d_xs           , h_xs           , num * dim * sizeof(double), cudaMemcpyHostToDevice);
-    cudaMemcpy(d_local_best_xs, h_local_best_xs, num * dim * sizeof(double), cudaMemcpyHostToDevice);
-    cudaMemcpy(d_global_best_x, h_global_best_x,       dim * sizeof(double), cudaMemcpyHostToDevice);
-    cudaMemcpy(d_norm_buffer  , h_norm_buffer  , num       * sizeof(double), cudaMemcpyHostToDevice);
+    cudaMemcpy(d_vs           , h_vs           , num * dim * sizeof(scalar_t), cudaMemcpyHostToDevice);
+    cudaMemcpy(d_xs           , h_xs           , num * dim * sizeof(scalar_t), cudaMemcpyHostToDevice);
+    cudaMemcpy(d_local_best_xs, h_local_best_xs, num * dim * sizeof(scalar_t), cudaMemcpyHostToDevice);
+    cudaMemcpy(d_global_best_x, h_global_best_x,       dim * sizeof(scalar_t), cudaMemcpyHostToDevice);
+    cudaMemcpy(d_norm_buffer  , h_norm_buffer  , num       * sizeof(scalar_t), cudaMemcpyHostToDevice);
 
     update_velocities_cuda(
         d_vs, d_xs, d_local_best_xs, d_global_best_x, (is_norm_buffer? d_norm_buffer: nullptr), 
         1., 1., 1., v_max, num, dim, d_states
     );
 
-    cudaMemcpy(h_vs           , d_vs           , num * dim * sizeof(double), cudaMemcpyDeviceToHost);
-    cudaMemcpy(h_norm_buffer  , d_norm_buffer  , num       * sizeof(double), cudaMemcpyDeviceToHost);
+    cudaMemcpy(h_vs           , d_vs           , num * dim * sizeof(scalar_t), cudaMemcpyDeviceToHost);
+    cudaMemcpy(h_norm_buffer  , d_norm_buffer  , num       * sizeof(scalar_t), cudaMemcpyDeviceToHost);
 
     std::cout << "After:\n";
     std::cout << "vs:\n"     ; print_matrix(h_vs, num, dim)       ; std::cout << std::endl;
@@ -222,19 +222,19 @@ void test_update_velocity(
 void test_update_position(
     ssize_t num   = 10,
     ssize_t dim   = 500,
-    double  x_min = -7.,
-    double  x_max = 7.
+    scalar_t  x_min = -7.,
+    scalar_t  x_max = 7.
 ){
-    double *h_xs, *h_vs;
-    double *d_xs, *d_vs;
+    scalar_t *h_xs, *h_vs;
+    scalar_t *d_xs, *d_vs;
 
-    h_xs = new double[num * dim];
-    h_vs = new double[num * dim];
+    h_xs = new scalar_t[num * dim];
+    h_vs = new scalar_t[num * dim];
 
-    memset(h_xs, 0, num * dim * sizeof(double));
+    memset(h_xs, 0, num * dim * sizeof(scalar_t));
     for (ssize_t i = 0; i < num; i++){
         for (ssize_t j = 0; j < dim; j++){
-            h_vs[i * dim + j] = -static_cast<double>(num) + 2 * static_cast<double>(i);
+            h_vs[i * dim + j] = -static_cast<scalar_t>(num) + 2 * static_cast<scalar_t>(i);
         }
     }
 
@@ -243,16 +243,16 @@ void test_update_position(
     std::cout << "vs:\n"    ; print_matrix(h_vs, num, dim);
     std::cout << std::endl;
 
-    cudaMalloc(&d_xs, num * dim * sizeof(double));
-    cudaMalloc(&d_vs, num * dim * sizeof(double));
+    cudaMalloc(&d_xs, num * dim * sizeof(scalar_t));
+    cudaMalloc(&d_vs, num * dim * sizeof(scalar_t));
 
-    cudaMemcpy(d_xs, h_xs, num * dim * sizeof(double), cudaMemcpyHostToDevice);
-    cudaMemcpy(d_vs, h_vs, num * dim * sizeof(double), cudaMemcpyHostToDevice);
+    cudaMemcpy(d_xs, h_xs, num * dim * sizeof(scalar_t), cudaMemcpyHostToDevice);
+    cudaMemcpy(d_vs, h_vs, num * dim * sizeof(scalar_t), cudaMemcpyHostToDevice);
 
     update_positions_cuda(d_xs, d_vs, x_min, x_max, num, dim);
 
-    cudaMemcpy(h_xs, d_xs, num * dim * sizeof(double), cudaMemcpyDeviceToHost);
-    cudaMemcpy(h_vs, d_vs, num * dim * sizeof(double), cudaMemcpyDeviceToHost);
+    cudaMemcpy(h_xs, d_xs, num * dim * sizeof(scalar_t), cudaMemcpyDeviceToHost);
+    cudaMemcpy(h_vs, d_vs, num * dim * sizeof(scalar_t), cudaMemcpyDeviceToHost);
 
     std::cout << "After:\n";
     std::cout << "xs:\n"   ; print_matrix(h_xs, num, dim);
@@ -271,36 +271,36 @@ void test_update_best(
 
     srand(time(NULL));
 
-    double *h_xs, *h_local_best_xs, *h_global_best_x;
-    double *h_x_fits, *h_local_best_fits, *h_global_best_fit, *x_fits;
+    scalar_t *h_xs, *h_local_best_xs, *h_global_best_x;
+    scalar_t *h_x_fits, *h_local_best_fits, *h_global_best_fit, *x_fits;
 
-    double *d_xs, *d_local_best_xs, *d_global_best_x;
-    double *d_x_fits, *d_local_best_fits, *d_global_best_fit;
+    scalar_t *d_xs, *d_local_best_xs, *d_global_best_x;
+    scalar_t *d_x_fits, *d_local_best_fits, *d_global_best_fit;
 
     ssize_t real_global_min_idx = num;
-    double real_global_min_fit = DBL_MAX;
+    scalar_t real_global_min_fit = DBL_MAX;
 
     ssize_t global_best_idx = num;
 
-    h_xs            = new double[num * dim];
-    h_local_best_xs = new double[num * dim];
-    h_global_best_x = new double[dim];
+    h_xs            = new scalar_t[num * dim];
+    h_local_best_xs = new scalar_t[num * dim];
+    h_global_best_x = new scalar_t[dim];
 
     for (ssize_t i = 0; i < num; i++)
     for (ssize_t j = 0; j < dim; j++){
-        h_xs[i * dim + j] = static_cast<double>(i + 1);
+        h_xs[i * dim + j] = static_cast<scalar_t>(i + 1);
         h_local_best_xs[i * dim + j] = 0.;
         h_global_best_x[j] = 0.;
     }
 
-    h_x_fits          = new double[num];
-    h_local_best_fits = new double[num];
-    h_global_best_fit = new double;
-    x_fits            = new double[num];
+    h_x_fits          = new scalar_t[num];
+    h_local_best_fits = new scalar_t[num];
+    h_global_best_fit = new scalar_t;
+    x_fits            = new scalar_t[num];
     
     for (ssize_t i = 0; i < num; i++){
-        h_x_fits[i] = rand_number(num); // static_cast<double>(i);
-        h_local_best_fits[i] = static_cast<double>(num / 2);
+        h_x_fits[i] = rand_number(num); // static_cast<scalar_t>(i);
+        h_local_best_fits[i] = static_cast<scalar_t>(num / 2);
         if (h_x_fits[i] < real_global_min_fit){
             real_global_min_fit = h_x_fits[i];
             real_global_min_idx = i;
@@ -317,33 +317,33 @@ void test_update_best(
     // std::cout << "\nl_fits:\n"; print_matrix(h_local_best_fits, num, 1);
     std::cout << "\ng_fits:\n"; std::cout << *h_global_best_fit << " | idx = " << global_best_idx << " (real = " << real_global_min_fit << " | idx = " << real_global_min_idx << ")" << std::endl;
 
-    cudaMalloc(&d_xs           , num * dim * sizeof(double));
-    cudaMalloc(&d_local_best_xs, num * dim * sizeof(double));
-    cudaMalloc(&d_global_best_x,       dim * sizeof(double));
+    cudaMalloc(&d_xs           , num * dim * sizeof(scalar_t));
+    cudaMalloc(&d_local_best_xs, num * dim * sizeof(scalar_t));
+    cudaMalloc(&d_global_best_x,       dim * sizeof(scalar_t));
 
-    cudaMemcpy(d_xs           , h_xs           , num * dim * sizeof(double), cudaMemcpyHostToDevice);
-    cudaMemcpy(d_local_best_xs, h_local_best_xs, num * dim * sizeof(double), cudaMemcpyHostToDevice);
-    cudaMemcpy(d_global_best_x, h_global_best_x,       dim * sizeof(double), cudaMemcpyHostToDevice);
+    cudaMemcpy(d_xs           , h_xs           , num * dim * sizeof(scalar_t), cudaMemcpyHostToDevice);
+    cudaMemcpy(d_local_best_xs, h_local_best_xs, num * dim * sizeof(scalar_t), cudaMemcpyHostToDevice);
+    cudaMemcpy(d_global_best_x, h_global_best_x,       dim * sizeof(scalar_t), cudaMemcpyHostToDevice);
 
-    cudaMalloc(&d_x_fits         , num * sizeof(double));
-    cudaMalloc(&d_local_best_fits, num * sizeof(double));
-    cudaMalloc(&d_global_best_fit,       sizeof(double));
+    cudaMalloc(&d_x_fits         , num * sizeof(scalar_t));
+    cudaMalloc(&d_local_best_fits, num * sizeof(scalar_t));
+    cudaMalloc(&d_global_best_fit,       sizeof(scalar_t));
 
-    cudaMemcpy(d_x_fits         , h_x_fits         , num * sizeof(double), cudaMemcpyHostToDevice);
-    cudaMemcpy(d_local_best_fits, h_local_best_fits, num * sizeof(double), cudaMemcpyHostToDevice);
-    cudaMemcpy(d_global_best_fit, h_global_best_fit,       sizeof(double), cudaMemcpyHostToDevice);
+    cudaMemcpy(d_x_fits         , h_x_fits         , num * sizeof(scalar_t), cudaMemcpyHostToDevice);
+    cudaMemcpy(d_local_best_fits, h_local_best_fits, num * sizeof(scalar_t), cudaMemcpyHostToDevice);
+    cudaMemcpy(d_global_best_fit, h_global_best_fit,       sizeof(scalar_t), cudaMemcpyHostToDevice);
 
     global_best_idx = update_bests_cuda(
         d_xs, d_x_fits, d_local_best_xs, d_local_best_fits, d_global_best_x, d_global_best_fit, num, dim
     );
 
-    cudaMemcpy(h_xs           , d_xs           , num * dim * sizeof(double), cudaMemcpyDeviceToHost);
-    cudaMemcpy(h_local_best_xs, d_local_best_xs, num * dim * sizeof(double), cudaMemcpyDeviceToHost);
-    cudaMemcpy(h_global_best_x, d_global_best_x,       dim * sizeof(double), cudaMemcpyDeviceToHost);
+    cudaMemcpy(h_xs           , d_xs           , num * dim * sizeof(scalar_t), cudaMemcpyDeviceToHost);
+    cudaMemcpy(h_local_best_xs, d_local_best_xs, num * dim * sizeof(scalar_t), cudaMemcpyDeviceToHost);
+    cudaMemcpy(h_global_best_x, d_global_best_x,       dim * sizeof(scalar_t), cudaMemcpyDeviceToHost);
 
-    cudaMemcpy(h_x_fits         , d_x_fits         , num * sizeof(double), cudaMemcpyDeviceToHost);
-    cudaMemcpy(h_local_best_fits, d_local_best_fits, num * sizeof(double), cudaMemcpyDeviceToHost);
-    cudaMemcpy(h_global_best_fit, d_global_best_fit,       sizeof(double), cudaMemcpyDeviceToHost);
+    cudaMemcpy(h_x_fits         , d_x_fits         , num * sizeof(scalar_t), cudaMemcpyDeviceToHost);
+    cudaMemcpy(h_local_best_fits, d_local_best_fits, num * sizeof(scalar_t), cudaMemcpyDeviceToHost);
+    cudaMemcpy(h_global_best_fit, d_global_best_fit,       sizeof(scalar_t), cudaMemcpyDeviceToHost);
 
     cudaDeviceSynchronize();
 

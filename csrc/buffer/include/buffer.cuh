@@ -17,7 +17,6 @@ enum class Device {
     GPU
 };
 
-template <typename scalar_t>
 class Buffer 
 {
 public:
@@ -63,9 +62,6 @@ private:
 
     void _release();
 };
-
-template class Buffer<float>;
-template class Buffer<double>;
 
 
 class CURANDStates 

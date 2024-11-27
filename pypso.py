@@ -131,9 +131,9 @@ class PSO:
 def main():
     seed        = None
     func        = levy_func
-    dim         = 3 * 2**8
+    dim         = 3 * 2**5
     n           = dim * 2**5
-    iters       = 100
+    iters       = 1000
     x_min       = -20
     x_max       = 20.
     v_max       = 5.

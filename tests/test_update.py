@@ -78,10 +78,10 @@ class TestUpdateFuncs(unittest.TestCase):
         local_best_fits = cuPSO.Buffer(n)
         global_best_fit = cuPSO.Buffer(1)
 
-        xs_cpu = np.arange(n, dtype=np.double).reshape(-1, 1).repeat(d, axis=1)
+        xs_cpu = np.arange(n, dtype=np.float64).reshape(-1, 1).repeat(d, axis=1)
         local_best_xs_cpu = np.zeros((n, d))
         global_best_x_cpu = np.ones(d) * -999.
-        x_fits_cpu = np.abs(np.arange(n, dtype=np.double) - n * 0.5)
+        x_fits_cpu = np.abs(np.arange(n, dtype=np.float64) - n * 0.5)
         local_best_fits_cpu = np.zeros(n) + n * 0.25
         global_best_fit_cpu = np.ones(1) * float("inf")
 

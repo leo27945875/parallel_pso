@@ -9,8 +9,7 @@
 
 
 // start Buffer
-template <typename scalar_t>
-Buffer<scalar_t>::Buffer(ssize_t nrow, ssize_t ncol, Device device)
+Buffer::Buffer(ssize_t nrow, ssize_t ncol, Device device)
     : m_nrow(nrow), m_ncol(ncol), m_device(device)
 {
     if (nrow == 0 || ncol == 0){
@@ -28,8 +27,7 @@ Buffer<scalar_t>::Buffer(ssize_t nrow, ssize_t ncol, Device device)
         break;
     }
 }
-template <typename scalar_t>
-Buffer<scalar_t>::Buffer(Buffer<scalar_t> const &other)
+Buffer::Buffer(Buffer const &other)
     : m_nrow(other.m_nrow), m_ncol(other.m_ncol), m_device(other.m_device)
 {
     switch (m_device)
@@ -44,16 +42,14 @@ Buffer<scalar_t>::Buffer(Buffer<scalar_t> const &other)
         break;
     }
 }
-template <typename scalar_t>
-Buffer<scalar_t>::Buffer(Buffer<scalar_t> &&other) noexcept 
+Buffer::Buffer(Buffer &&other) noexcept 
     : m_nrow(other.m_nrow), m_ncol(other.m_ncol), m_device(other.m_device), m_buffer(other.m_buffer)
 {
     other.m_buffer = nullptr;
     other.m_nrow   = 0;
     other.m_ncol   = 0;
 }
-template <typename scalar_t>
-Buffer<scalar_t> & Buffer<scalar_t>::operator=(Buffer<scalar_t> const &other){
+Buffer & Buffer::operator=(Buffer const &other){
     if (!is_same_shape(other))
         throw std::runtime_error("Shapes do not match.");
     if (!is_same_device(other))
@@ -69,8 +65,7 @@ Buffer<scalar_t> & Buffer<scalar_t>::operator=(Buffer<scalar_t> const &other){
     }
     return *this;
 }
-template <typename scalar_t>
-Buffer<scalar_t> & Buffer<scalar_t>::operator=(Buffer<scalar_t> &&other) noexcept {
+Buffer & Buffer::operator=(Buffer &&other) noexcept {
     _release();
     m_buffer       = other.m_buffer;
     m_nrow         = other.m_nrow;
@@ -81,13 +76,11 @@ Buffer<scalar_t> & Buffer<scalar_t>::operator=(Buffer<scalar_t> &&other) noexcep
     other.m_ncol   = 0;
     return *this;
 }
-template <typename scalar_t>
-Buffer<scalar_t>::~Buffer(){
+Buffer::~Buffer(){
     _release();
 }
 
-template <typename scalar_t>
-void Buffer<scalar_t>::set_value(ssize_t row, ssize_t col, scalar_t val) {
+void Buffer::set_value(ssize_t row, ssize_t col, scalar_t val) {
     switch (m_device)
     {
     case Device::CPU:
@@ -98,8 +91,7 @@ void Buffer<scalar_t>::set_value(ssize_t row, ssize_t col, scalar_t val) {
         break;
     }
 }
-template <typename scalar_t>
-scalar_t Buffer<scalar_t>::get_value(ssize_t row, ssize_t col) const {
+scalar_t Buffer::get_value(ssize_t row, ssize_t col) const {
     scalar_t res;
     switch (m_device)
     {
@@ -112,65 +104,51 @@ scalar_t Buffer<scalar_t>::get_value(ssize_t row, ssize_t col) const {
     }
     return res;
 }
-template <typename scalar_t>
-scalar_t Buffer<scalar_t>::operator()(ssize_t row, ssize_t col) const {
+scalar_t Buffer::operator()(ssize_t row, ssize_t col) const {
     return get_value(row, col);
 }
 
-template <typename scalar_t>
-scalar_t * Buffer<scalar_t>::data_ptr() const {
+scalar_t * Buffer::data_ptr() const {
     return m_buffer;
 }
-template <typename scalar_t>
-scalar_t const * Buffer<scalar_t>::cdata_ptr() const {
+scalar_t const * Buffer::cdata_ptr() const {
     return m_buffer;
 }
 
-template <typename scalar_t>
-Device Buffer<scalar_t>::device() const {
+Device Buffer::device() const {
     return m_device;
 }
-template <typename scalar_t>
-shape_t Buffer<scalar_t>::shape() const {
+shape_t Buffer::shape() const {
     return {m_nrow, m_ncol};
 }
-template <typename scalar_t>
-ssize_t Buffer<scalar_t>::nrow() const {
+ssize_t Buffer::nrow() const {
     return m_nrow;
 }
-template <typename scalar_t>
-ssize_t Buffer<scalar_t>::ncol() const {
+ssize_t Buffer::ncol() const {
     return m_ncol;
 }
-template <typename scalar_t>
-ssize_t Buffer<scalar_t>::num_elem() const {
+ssize_t Buffer::num_elem() const {
     return m_nrow * m_ncol;
 }
-template <typename scalar_t>
-ssize_t Buffer<scalar_t>::buffer_size() const {
+ssize_t Buffer::buffer_size() const {
     return m_nrow * m_ncol * sizeof(scalar_t);
 }
-template <typename scalar_t>
-ssize_t Buffer<scalar_t>::index_at(ssize_t row, ssize_t col) const {
+ssize_t Buffer::index_at(ssize_t row, ssize_t col) const {
     return row * m_ncol + col;
 }
-template <typename scalar_t>
-bool Buffer<scalar_t>::is_same_shape(Buffer<scalar_t> const &other) const {
+bool Buffer::is_same_shape(Buffer const &other) const {
     return m_nrow == other.nrow() && m_ncol == other.ncol();
 }
-template <typename scalar_t>
-bool Buffer<scalar_t>::is_same_device(Buffer<scalar_t> const &other) const {
+bool Buffer::is_same_device(Buffer const &other) const {
     return m_device == other.device();
 }
-template <typename scalar_t>
-std::string Buffer<scalar_t>::to_string() const {
+std::string Buffer::to_string() const {
     std::stringstream ss;
     ss << "<Buffer shape=(" << m_nrow << ", " << m_ncol << ") device=" << ((m_device == Device::CPU)? "CPU": "GPU") << " @" << (uintptr_t)this << ">";
     return ss.str();
 }
 
-template <typename scalar_t>
-void Buffer<scalar_t>::to(Device device){
+void Buffer::to(Device device){
     if (m_device == device)
         return;
     scalar_t *new_buffer;
@@ -190,8 +168,7 @@ void Buffer<scalar_t>::to(Device device){
     m_buffer = new_buffer;
     m_device = device;
 }
-template <typename scalar_t>
-void Buffer<scalar_t>::fill(scalar_t val){
+void Buffer::fill(scalar_t val){
     switch (m_device)
     {
     case Device::CPU:
@@ -203,8 +180,7 @@ void Buffer<scalar_t>::fill(scalar_t val){
         break;
     }
 }
-template<typename scalar_t>
-void Buffer<scalar_t>::show(){
+void Buffer::show(){
     for (ssize_t i = 0; i < m_nrow; i++)
     for (ssize_t j = 0; j < m_ncol; j++){
         if (j == m_ncol - 1)
@@ -213,16 +189,14 @@ void Buffer<scalar_t>::show(){
             std::cout << std::fixed << std::setprecision(8) << get_value(i, j) << ", ";
     }
 }
-template <typename scalar_t>
-void Buffer<scalar_t>::clear(){
+void Buffer::clear(){
     _release();
     m_buffer = nullptr;
     m_nrow   = 0;
     m_ncol   = 0;
 }
 
-template <typename scalar_t>
-void Buffer<scalar_t>::_release(){
+void Buffer::_release(){
     if (!m_buffer)
         return;
     switch (m_device)
@@ -237,8 +211,7 @@ void Buffer<scalar_t>::_release(){
     }
 }
 
-template <typename scalar_t>
-void Buffer<scalar_t>::copy_to_numpy(ndarray_t<scalar_t> &out) const {
+void Buffer::copy_to_numpy(ndarray_t<scalar_t> &out) const {
     ssize_t buf_buffer_size = buffer_size();
     ssize_t npy_buffer_size = out.nbytes();
 
@@ -255,8 +228,7 @@ void Buffer<scalar_t>::copy_to_numpy(ndarray_t<scalar_t> &out) const {
         break;
     }
 }
-template <typename scalar_t>
-void Buffer<scalar_t>::copy_from_numpy(ndarray_t<scalar_t> const &src) const {
+void Buffer::copy_from_numpy(ndarray_t<scalar_t> const &src) const {
     ssize_t buf_buffer_size = buffer_size();
     ssize_t npy_buffer_size = src.nbytes();
 

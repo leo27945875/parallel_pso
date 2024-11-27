@@ -1,5 +1,5 @@
 #include <pybind11/pybind11.h>
-
+#include "utils.cuh"
 #include "buffer.cuh"
 #include "funcs.cuh"
 #include "velocity.cuh"
@@ -7,9 +7,6 @@
 #include "evolve.cuh"
 
 namespace py = pybind11;
-
-using scalar_t = double;
-using FloatBuffer = Buffer<scalar_t>;
 
 
 scalar_t binded_calc_fitness_val_npy(
@@ -29,8 +26,8 @@ void binded_calc_fitness_vals_npy(
     );
 }
 void binded_calc_fitness_vals(
-    FloatBuffer const &xs, 
-    FloatBuffer       &out
+    Buffer const &xs, 
+    Buffer       &out
 ){
     levy_function_cuda(
         xs.cdata_ptr(),
@@ -41,15 +38,15 @@ void binded_calc_fitness_vals(
 }
 
 void binded_update_velocities(
-    FloatBuffer const &xs,
-    FloatBuffer       &vs, 
-    FloatBuffer const &local_best_xs, 
-    FloatBuffer const &global_best_x,
-    FloatBuffer       &v_sum_pow2,
-    double             w,
-    double             c0,
-    double             c1,
-    double             v_max,
+    Buffer const &xs,
+    Buffer       &vs, 
+    Buffer const &local_best_xs, 
+    Buffer const &global_best_x,
+    Buffer       &v_sum_pow2,
+    scalar_t             w,
+    scalar_t             c0,
+    scalar_t             c1,
+    scalar_t             v_max,
     CURANDStates      &rng_states
 ){
     update_velocities_cuda(
@@ -69,10 +66,10 @@ void binded_update_velocities(
 }
 
 void binded_update_positions(
-    FloatBuffer       &xs,
-    FloatBuffer const &vs,
-    double             x_min,
-    double             x_max
+    Buffer       &xs,
+    Buffer const &vs,
+    scalar_t             x_min,
+    scalar_t             x_max
 ){
     update_positions_cuda(
         xs.data_ptr(),
@@ -85,12 +82,12 @@ void binded_update_positions(
 }
 
 ssize_t binded_update_bests(
-    FloatBuffer const &xs,
-    FloatBuffer const &x_fits,
-    FloatBuffer       &local_best_xs,
-    FloatBuffer       &local_best_fits,
-    FloatBuffer       &global_best_x,
-    FloatBuffer       &global_best_fit
+    Buffer const &xs,
+    Buffer const &x_fits,
+    Buffer       &local_best_xs,
+    Buffer       &local_best_fits,
+    Buffer       &global_best_x,
+    Buffer       &global_best_fit
 ){
     return update_bests_cuda(
         xs.cdata_ptr(),
@@ -110,26 +107,26 @@ PYBIND11_MODULE(cuPSO, m){
         .value("CPU", Device::CPU)
         .value("GPU", Device::GPU);
 
-    py::class_<FloatBuffer>(m, "Buffer")
+    py::class_<Buffer>(m, "Buffer")
         .def(py::init<ssize_t, ssize_t, Device>(), py::arg("nrow"), py::arg("ncol") = 1, py::arg("device") = Device::GPU)
-        .def("__getitem__"    , [](FloatBuffer &self, std::pair<ssize_t, ssize_t> key)            { return self.get_value(key.first, key.second);      }, py::arg("key")                )
-        .def("__setitem__"    , [](FloatBuffer &self, std::pair<ssize_t, ssize_t> key, double val){ return self.set_value(key.first, key.second, val); }, py::arg("key"), py::arg("val"))
-        .def("__repr__"       , &FloatBuffer::to_string                          )
-        .def("__str__"        , &FloatBuffer::to_string                          )
-        .def("device"         , &FloatBuffer::device                             )
-        .def("shape"          , &FloatBuffer::shape                              )
-        .def("nrow"           , &FloatBuffer::nrow                               )
-        .def("ncol"           , &FloatBuffer::ncol                               )
-        .def("num_elem"       , &FloatBuffer::num_elem                           )
-        .def("buffer_size"    , &FloatBuffer::buffer_size                        )
-        .def("is_same_shape"  , &FloatBuffer::is_same_shape   , py::arg("other") )
-        .def("is_same_device" , &FloatBuffer::is_same_device  , py::arg("other") )
-        .def("copy_to_numpy"  , &FloatBuffer::copy_to_numpy   , py::arg("out")   )
-        .def("copy_from_numpy", &FloatBuffer::copy_from_numpy , py::arg("src")   )
-        .def("to"             , &FloatBuffer::to              , py::arg("device"))
-        .def("fill"           , &FloatBuffer::fill            , py::arg("val")   )
-        .def("show"           , &FloatBuffer::show                               )
-        .def("clear"          , &FloatBuffer::clear                              );
+        .def("__getitem__"    , [](Buffer &self, std::pair<ssize_t, ssize_t> key)            { return self.get_value(key.first, key.second);      }, py::arg("key")                )
+        .def("__setitem__"    , [](Buffer &self, std::pair<ssize_t, ssize_t> key, scalar_t val){ return self.set_value(key.first, key.second, val); }, py::arg("key"), py::arg("val"))
+        .def("__repr__"       , &Buffer::to_string                          )
+        .def("__str__"        , &Buffer::to_string                          )
+        .def("device"         , &Buffer::device                             )
+        .def("shape"          , &Buffer::shape                              )
+        .def("nrow"           , &Buffer::nrow                               )
+        .def("ncol"           , &Buffer::ncol                               )
+        .def("num_elem"       , &Buffer::num_elem                           )
+        .def("buffer_size"    , &Buffer::buffer_size                        )
+        .def("is_same_shape"  , &Buffer::is_same_shape   , py::arg("other") )
+        .def("is_same_device" , &Buffer::is_same_device  , py::arg("other") )
+        .def("copy_to_numpy"  , &Buffer::copy_to_numpy   , py::arg("out")   )
+        .def("copy_from_numpy", &Buffer::copy_from_numpy , py::arg("src")   )
+        .def("to"             , &Buffer::to              , py::arg("device"))
+        .def("fill"           , &Buffer::fill            , py::arg("val")   )
+        .def("show"           , &Buffer::show                               )
+        .def("clear"          , &Buffer::clear                              );
     
     py::class_<CURANDStates>(m, "CURANDStates")
         .def(py::init<ssize_t, unsigned long long>(), py::arg("size"), py::arg("seed"))

@@ -27,6 +27,9 @@
     #define cudaCheckErrors(msg)
 #endif
 
+// Float precision:
+typedef double scalar_t;
+
 // Mutex for kernels:
 typedef int cuda_mutex_t;
 __host__   void cuda_create_mutex  (cuda_mutex_t **mutex);
@@ -36,16 +39,20 @@ __device__ void unlock_kernel_mutex(cuda_mutex_t  *mutex);
 
 // Random number functions:
 typedef curandState cuda_rng_t;
-__host__ double rand_number       (double range = 1.);
-__host__ void   curand_setup      (ssize_t size, unsigned long long seed, cuda_rng_t **rng_states);
-__host__ void   curand_destroy    (cuda_rng_t *rng_states);
-__host__ void   get_curand_numbers(ssize_t size, cuda_rng_t *rng_states, double *res);
+__host__ scalar_t rand_number       (scalar_t range = 1.);
+__host__ void     curand_setup      (ssize_t size, unsigned long long seed, cuda_rng_t **rng_states);
+__host__ void     curand_destroy    (cuda_rng_t *rng_states);
+__host__ void     get_curand_numbers(ssize_t size, cuda_rng_t *rng_states, scalar_t *res);
+
+template<typename T> static __forceinline__ __device__ T      _get_curand_uniform(cuda_rng_t *rng_state);
+template<>                  __forceinline__ __device__ float  _get_curand_uniform(cuda_rng_t *rng_state){ return curand_uniform(rng_state); }
+template<>                  __forceinline__ __device__ double _get_curand_uniform(cuda_rng_t *rng_state){ return curand_uniform_double(rng_state); }
 
 // Other helper functions:
-__host__            void    print_matrix    (double const *mat, ssize_t nrow, ssize_t ncol);
-__host__            ssize_t get_num_block_1d(ssize_t dim);
-__host__            ssize_t cdiv            (ssize_t total, ssize_t size);
-__host__ __device__ double  pow2            (double x);
+__host__            void     print_matrix    (scalar_t const *mat, ssize_t nrow, ssize_t ncol);
+__host__            ssize_t  get_num_block_1d(ssize_t dim);
+__host__            ssize_t  cdiv            (ssize_t total, ssize_t size);
+__host__ __device__ scalar_t pow2            (scalar_t x);
 
-__global__ void sum_rows_kernel       (double const *xs, double *out, ssize_t num, ssize_t dim);
-__global__ void find_global_min_kernel(double const *numbers, double *global_min_num, ssize_t *global_min_idx, ssize_t size, cuda_mutex_t *mutex);
+__global__ void sum_rows_kernel       (scalar_t const *xs, scalar_t *out, ssize_t num, ssize_t dim);
+__global__ void find_global_min_kernel(scalar_t const *numbers, scalar_t *global_min_num, ssize_t *global_min_idx, ssize_t size, cuda_mutex_t *mutex);

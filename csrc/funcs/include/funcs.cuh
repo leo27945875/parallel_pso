@@ -1,6 +1,7 @@
 #pragma once
 
+#include "utils.cuh"
 
-double levy(double const *x, ssize_t dim);
-void levy_function_cuda(double const *xs_cuda_ptr, double *out_cuda_ptr, ssize_t num, ssize_t dim);
-void levy_function_cpu(double const *xs, double *out, ssize_t num, ssize_t dim);
+scalar_t levy(scalar_t const *x, ssize_t dim);
+void levy_function_cuda(scalar_t const *xs_cuda_ptr, scalar_t *out_cuda_ptr, ssize_t num, ssize_t dim);
+void levy_function_cpu(scalar_t const *xs, scalar_t *out, ssize_t num, ssize_t dim);

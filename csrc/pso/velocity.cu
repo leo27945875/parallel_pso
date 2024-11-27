@@ -3,16 +3,16 @@
 
 
 __global__ void update_velocities_kernel(
-    double       *vs, 
-    double const *xs, 
-    double const *local_best_xs, 
-    double const *global_best_x,
-    double        w,
-    double        c0,
-    double        c1,
-    ssize_t       num, 
-    ssize_t       dim,
-    cuda_rng_t   *rng_states
+    scalar_t       *vs, 
+    scalar_t const *xs, 
+    scalar_t const *local_best_xs, 
+    scalar_t const *global_best_x,
+    scalar_t        w,
+    scalar_t        c0,
+    scalar_t        c1,
+    ssize_t         num, 
+    ssize_t         dim,
+    cuda_rng_t     *rng_states
 ){
     ssize_t nid = blockIdx.x;
     ssize_t idx = blockIdx.y * blockDim.x + threadIdx.x;
@@ -20,18 +20,18 @@ __global__ void update_velocities_kernel(
     for (ssize_t i = idx; i < dim; i += gridDim.y * blockDim.x){
 
         // Load data into local memory:
-        double v = vs[nid * dim + i];
-        double x = xs[nid * dim + i];
-        double lbest_x = local_best_xs[nid * dim + i];
-        double gbest_x = global_best_x[i];
+        scalar_t v = vs[nid * dim + i];
+        scalar_t x = xs[nid * dim + i];
+        scalar_t lbest_x = local_best_xs[nid * dim + i];
+        scalar_t gbest_x = global_best_x[i];
 
         // Update velocities:
 #if IS_VELOVITY_USE_RANDOM
         cuda_rng_t thread_rng_state = rng_states[nid * dim + i];
         vs[nid * dim + i] = (
             w * v + 
-            c0 * curand_uniform_double(&thread_rng_state) * (lbest_x - x) + 
-            c1 * curand_uniform_double(&thread_rng_state) * (gbest_x - x)
+            c0 * _get_curand_uniform<scalar_t>(&thread_rng_state) * (lbest_x - x) + 
+            c1 * _get_curand_uniform<scalar_t>(&thread_rng_state) * (gbest_x - x)
         );
         rng_states[nid * dim + idx] = thread_rng_state;
 #else
@@ -45,19 +45,19 @@ __global__ void update_velocities_kernel(
 }
 
 __global__ void update_velocities_with_sum_pow2_kernel(
-    double       *vs, 
-    double const *xs, 
-    double const *local_best_xs, 
-    double const *global_best_x,
-    double       *v_sum_pow2_res,
-    double        w,
-    double        c0,
-    double        c1,
-    ssize_t       num, 
-    ssize_t       dim,
-    cuda_rng_t   *rng_states
+    scalar_t       *vs, 
+    scalar_t const *xs, 
+    scalar_t const *local_best_xs, 
+    scalar_t const *global_best_x,
+    scalar_t       *v_sum_pow2_res,
+    scalar_t        w,
+    scalar_t        c0,
+    scalar_t        c1,
+    ssize_t         num, 
+    ssize_t         dim,
+    cuda_rng_t     *rng_states
 ){
-    __shared__ double p_smem[BLOCK_DIM_1D];
+    __shared__ scalar_t p_smem[BLOCK_DIM_1D];
 
     ssize_t nid = blockIdx.x;
     ssize_t bid = blockIdx.y;
@@ -67,18 +67,18 @@ __global__ void update_velocities_with_sum_pow2_kernel(
     p_smem[tid] = 0.;
     for (ssize_t i = idx; i < dim; i += gridDim.y * blockDim.x){
         // Load data into local memory:
-        double v = vs[nid * dim + i];
-        double x = xs[nid * dim + i];
-        double lbest_x = local_best_xs[nid * dim + i];
-        double gbest_x = global_best_x[i];
+        scalar_t v = vs[nid * dim + i];
+        scalar_t x = xs[nid * dim + i];
+        scalar_t lbest_x = local_best_xs[nid * dim + i];
+        scalar_t gbest_x = global_best_x[i];
 
         // Calculate new velocities:
 #if IS_VELOVITY_USE_RANDOM
         cuda_rng_t thread_rng_state = rng_states[nid * dim + idx];
         v = (
             w * v + 
-            c0 * curand_uniform_double(&thread_rng_state) * (lbest_x - x) + 
-            c1 * curand_uniform_double(&thread_rng_state) * (gbest_x - x)
+            c0 * _get_curand_uniform<scalar_t>(&thread_rng_state) * (lbest_x - x) + 
+            c1 * _get_curand_uniform<scalar_t>(&thread_rng_state) * (gbest_x - x)
         );
         rng_states[nid * dim + idx] = thread_rng_state;
 #else
@@ -105,15 +105,15 @@ __global__ void update_velocities_with_sum_pow2_kernel(
 }
 
 __global__ void norm_clip_velocities_kernel(
-    double *vs, 
-    double *v_sum_pow2_res,
-    double  v_max,
-    ssize_t num, 
-    ssize_t dim
+    scalar_t *vs, 
+    scalar_t *v_sum_pow2_res,
+    scalar_t  v_max,
+    ssize_t   num, 
+    ssize_t   dim
 ){
     ssize_t nid = blockIdx.x;
     ssize_t idx = blockIdx.y * blockDim.x + threadIdx.x;
-    double norm = sqrt(v_sum_pow2_res[nid]); // 'Broadcast' mechanism (see https://forums.developer.nvidia.com/t/accessing-same-global-memory-address-within-warps/66574)
+    scalar_t norm = sqrt(v_sum_pow2_res[nid]); // 'Broadcast' mechanism (see https://forums.developer.nvidia.com/t/accessing-same-global-memory-address-within-warps/66574)
     if (norm <= v_max)
         return;
     for (ssize_t i = idx; i < dim; i += gridDim.y * blockDim.x){
@@ -122,18 +122,18 @@ __global__ void norm_clip_velocities_kernel(
 }
 
 void update_velocities_cuda(
-    double       *vs_cuda_ptr, 
-    double const *xs_cuda_ptr, 
-    double const *local_best_xs_cuda_ptr, 
-    double const *global_best_x_cuda_ptr,
-    double       *v_sum_pow2_cuda_ptr,
-    double        w,
-    double        c0,
-    double        c1,
-    double        v_max,
-    ssize_t       num, 
-    ssize_t       dim,
-    cuda_rng_t   *rng_states_cuda_ptr
+    scalar_t       *vs_cuda_ptr, 
+    scalar_t const *xs_cuda_ptr, 
+    scalar_t const *local_best_xs_cuda_ptr, 
+    scalar_t const *global_best_x_cuda_ptr,
+    scalar_t       *v_sum_pow2_cuda_ptr,
+    scalar_t        w,
+    scalar_t        c0,
+    scalar_t        c1,
+    scalar_t        v_max,
+    ssize_t         num, 
+    ssize_t         dim,
+    cuda_rng_t     *rng_states_cuda_ptr
 ){
     dim3 grid_dims(num, get_num_block_1d(dim));
     dim3 block_dims(BLOCK_DIM_1D);
@@ -147,10 +147,10 @@ void update_velocities_cuda(
     }else{
         bool is_v_sum_pow2_no_buffer = (v_sum_pow2_cuda_ptr == nullptr);
         if (is_v_sum_pow2_no_buffer){
-            cudaMalloc(&v_sum_pow2_cuda_ptr, num * sizeof(double));
+            cudaMalloc(&v_sum_pow2_cuda_ptr, num * sizeof(scalar_t));
             cudaCheckErrors("Failed to allocate memory buffer to 'v_sum_pow2_cuda_ptr'.");
         }
-        cudaMemset(v_sum_pow2_cuda_ptr, 0, num * sizeof(double));
+        cudaMemset(v_sum_pow2_cuda_ptr, 0, num * sizeof(scalar_t));
         cudaCheckErrors("Failed to set buffer 'v_sum_pow2_cuda_ptr' to zeros.");
 
         update_velocities_with_sum_pow2_kernel<<<grid_dims, block_dims>>>(
