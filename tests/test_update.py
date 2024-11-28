@@ -70,7 +70,7 @@ class TestUpdateFuncs(unittest.TestCase):
         self.assertTrue(np.allclose(xs_cpu, 10.))
     
     def test_update_bests(self):
-        n, d = 203, 83
+        n, d = 1000, 1024
         xs = cuPSO.Buffer(n, d)
         local_best_xs = cuPSO.Buffer(n, d)
         global_best_x = cuPSO.Buffer(1, d)

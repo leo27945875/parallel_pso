@@ -3,7 +3,7 @@ GITHUB_BRANCH := cuda_version
 COMMIT_MSG    := ${m}
 DEVICE        := ${d}
 
-.PHONY: clean test stubs cm push
+.PHONY: clean test stubs cm push cpu gpu perf
 
 test:
 	python -m unittest

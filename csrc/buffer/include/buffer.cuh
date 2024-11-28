@@ -45,14 +45,17 @@ public:
     bool        is_same_shape (Buffer const &other) const;
     bool        is_same_device(Buffer const &other) const;
     std::string to_string     () const;
+    std::string to_elem_string() const;
 
     void to   (Device device);
     void fill (scalar_t val);
     void show();
     void clear();
 
-    void copy_to_numpy(ndarray_t<scalar_t> &out) const;
-    void copy_from_numpy(ndarray_t<scalar_t> const &src) const;
+    void copy_to_numpy   (ndarray_t<scalar_t>       &out) const;
+    void copy_from_numpy (ndarray_t<scalar_t> const &src)      ;
+    void copy_to_buffer  (Buffer                    &out) const;
+    void copy_from_buffer(Buffer              const &out)      ;
 
 private:
     scalar_t  *m_buffer;

@@ -147,7 +147,25 @@ std::string Buffer::to_string() const {
     ss << "<Buffer shape=(" << m_nrow << ", " << m_ncol << ") device=" << ((m_device == Device::CPU)? "CPU": "GPU") << " @" << (uintptr_t)this << ">";
     return ss.str();
 }
-
+std::string Buffer::to_elem_string() const {
+    scalar_t *tmp_buffer = m_buffer;
+    if (m_device == Device::GPU){
+        tmp_buffer = new scalar_t[num_elem()];
+        cudaMemcpy(tmp_buffer, m_buffer, buffer_size(), cudaMemcpyDeviceToHost);
+    }
+    std::stringstream ss;
+    for (ssize_t i = 0; i < m_nrow; i++)
+    for (ssize_t j = 0; j < m_ncol; j++){
+        if (j == m_ncol - 1)
+            ss << std::fixed << std::setprecision(8) << tmp_buffer[index_at(i, j)] << "\n";
+        else
+            ss << std::fixed << std::setprecision(8) << tmp_buffer[index_at(i, j)] << ", ";
+    }
+    if (m_device == Device::GPU){
+        delete[] tmp_buffer;
+    }
+    return ss.str();
+}
 void Buffer::to(Device device){
     if (m_device == device)
         return;
@@ -228,7 +246,7 @@ void Buffer::copy_to_numpy(ndarray_t<scalar_t> &out) const {
         break;
     }
 }
-void Buffer::copy_from_numpy(ndarray_t<scalar_t> const &src) const {
+void Buffer::copy_from_numpy(ndarray_t<scalar_t> const &src){
     ssize_t buf_buffer_size = buffer_size();
     ssize_t npy_buffer_size = src.nbytes();
 
@@ -244,6 +262,12 @@ void Buffer::copy_from_numpy(ndarray_t<scalar_t> const &src) const {
         cudaMemcpy(m_buffer, src.data(), buf_buffer_size, cudaMemcpyHostToDevice);
         break;
     }
+}
+void Buffer::copy_to_buffer(Buffer &out) const {
+    out = *this;
+}
+void Buffer::copy_from_buffer(Buffer const &out){
+    *this = out;
 }
 // end Buffer
 

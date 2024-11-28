@@ -100,9 +100,20 @@ class TestBuffer(unittest.TestCase):
     
     def test_buffer_string(self):
         buffer = cuPSO.Buffer(10, 15, cuPSO.Device.CPU)
-        self.assertTrue(str(buffer).startswith("<Buffer shape=(10, 15) device=CPU @"))
+        self.assertTrue(repr(buffer).startswith("<Buffer shape=(10, 15) device=CPU @"))
         buffer.to(cuPSO.Device.GPU)
-        self.assertTrue(str(buffer).startswith("<Buffer shape=(10, 15) device=GPU @"))
+        self.assertTrue(repr(buffer).startswith("<Buffer shape=(10, 15) device=GPU @"))
+
+    def test_buffer_elem_string(self):
+        buffer = cuPSO.Buffer(10, 15, cuPSO.Device.CPU)
+        buffer.fill(0.)
+        string = str(buffer)
+        string = string.replace(',', '')
+        self.assertSequenceEqual([float(e) for e in string.split()], [0.] * (10 * 15))
+        buffer.to(cuPSO.Device.GPU)
+        string = str(buffer)
+        string = string.replace(',', '')
+        self.assertSequenceEqual([float(e) for e in string.split()], [0.] * (10 * 15))
 
 
 class TestCURAND(unittest.TestCase):
