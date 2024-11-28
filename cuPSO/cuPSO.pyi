@@ -1,6 +1,6 @@
 from __future__ import annotations
 import numpy
-from typing import Self, ClassVar, Callable, Any
+from typing import ClassVar, Callable, Any
 
 
 __all__ = [
@@ -22,43 +22,47 @@ class Buffer:
     @staticmethod
     def _pybind11_conduit_v1_(*args, **kwargs):
         ...
-    def __getitem__(self: Self, key: tuple[int, int]) -> float:
+    def __getitem__(self, key: tuple[int, int]) -> float:
         ...
-    def __init__(self: Self, nrow: int, ncol: int = 1, device: Device = Device.GPU) -> None:
+    def __init__(self, nrow: int, ncol: int = 1, device: Device = Device.GPU) -> None:
         ...
-    def __repr__(self: Self) -> str:
+    def __repr__(self) -> str:
         ...
-    def __setitem__(self: Self, key: tuple[int, int], val: float) -> None:
+    def __setitem__(self, key: tuple[int, int], val: float) -> None:
         ...
-    def __str__(self: Self) -> str:
+    def __str__(self) -> str:
         ...
-    def buffer_size(self: Self) -> int:
+    def buffer_size(self) -> int:
         ...
-    def clear(self: Self) -> None:
+    def clear(self) -> None:
         ...
-    def copy_to_numpy(self: Self, out: numpy.ndarray[numpy.float64]) -> None:
+    def copy_to_numpy(self, out: numpy.ndarray[numpy.float64]) -> None:
         ...
-    def copy_from_numpy(self: Self, src: numpy.ndarray[numpy.float64]) -> None:
+    def copy_from_numpy(self, src: numpy.ndarray[numpy.float64]) -> None:
         ...
-    def device(self: Self) -> Device:
+    def copy_to_buffer(self, out: "Buffer") -> None:
         ...
-    def fill(self: Self, val: float) -> None:
+    def copy_from_buffer(self, src: "Buffer") -> None:
         ...
-    def is_same_device(self: Self, other: Self) -> bool:
+    def device(self) -> Device:
         ...
-    def is_same_shape(self: Self, other: Self) -> bool:
+    def fill(self, val: float) -> None:
         ...
-    def ncol(self: Self) -> int:
+    def is_same_device(self, other: "Buffer") -> bool:
         ...
-    def nrow(self: Self) -> int:
+    def is_same_shape(self, other: "Buffer") -> bool:
         ...
-    def num_elem(self: Self) -> int:
+    def ncol(self) -> int:
         ...
-    def shape(self: Self) -> tuple[int, int]:
+    def nrow(self) -> int:
         ...
-    def show(self: Self) -> None:
+    def num_elem(self) -> int:
         ...
-    def to(self: Self, device: Device) -> None:
+    def shape(self) -> tuple[int, int]:
+        ...
+    def show(self) -> None:
+        ...
+    def to(self, device: Device) -> None:
         ...
     
 
@@ -78,15 +82,14 @@ class CURANDStates:
         ...
     def num_elem(self) -> int:
         ...
+
+
 class Device:
-    """
-    Members:
-     * CPU
-     * GPU
-    """
+
     CPU: ClassVar[Device]  # value = <Device.CPU: 0>
     GPU: ClassVar[Device]  # value = <Device.GPU: 1>
     __members__: ClassVar[dict[str, Device]]  # value = {'CPU': <Device.CPU: 0>, 'GPU': <Device.GPU: 1>}
+
     @staticmethod
     def _pybind11_conduit_v1_(*args, **kwargs):
         ...
