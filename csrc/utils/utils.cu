@@ -24,8 +24,11 @@ __host__ void print_matrix(scalar_t const *mat, ssize_t nrow, ssize_t ncol){
         printf("\n");
     }
 }
-__host__ ssize_t get_num_block_1d(ssize_t dim){
-    return min(MAX_NUM_BLOCK_1D, cdiv(dim, BLOCK_DIM_1D));
+__host__ ssize_t get_num_block_x(ssize_t dim){
+    return cdiv(dim, BLOCK_DIM_X);
+}
+__host__ ssize_t get_num_block_y(ssize_t dim){
+    return min(MAX_NUM_BLOCK_1D, cdiv(dim, BLOCK_DIM_Y));
 }
 __host__ ssize_t cdiv(ssize_t total, ssize_t size){
     return (total + size - 1) / size;
@@ -38,8 +41,8 @@ __host__ __device__ scalar_t pow2(scalar_t x){
 __global__ void find_global_min_kernel(
     scalar_t const *numbers, scalar_t *global_min_num, ssize_t *global_min_idx, ssize_t size, cuda_mutex_t *mutex
 ){
-    __shared__ scalar_t n_smem[BLOCK_DIM_1D];
-    __shared__ scalar_t i_smem[BLOCK_DIM_1D];
+    __shared__ scalar_t n_smem[BLOCK_DIM];
+    __shared__ scalar_t i_smem[BLOCK_DIM];
 
     ssize_t tid = threadIdx.x;
     ssize_t idx = blockDim.x * blockIdx.x + tid;
@@ -83,7 +86,7 @@ __global__ void get_rand_numbers_kernel(ssize_t size, cuda_rng_t *rng_states, sc
     }
 }
 __global__ void sum_rows_kernel(scalar_t const *xs, scalar_t *out, ssize_t num, ssize_t dim){
-    __shared__ scalar_t smem[BLOCK_DIM_1D];
+    __shared__ scalar_t smem[BLOCK_DIM];
     int nid = blockIdx.x;
     int bid = blockIdx.y;
     int tid = threadIdx.x;
@@ -108,7 +111,7 @@ __host__ scalar_t rand_number(scalar_t range){
 }
 __host__ void curand_setup(ssize_t size, unsigned long long seed, cuda_rng_t **rng_states){
     cudaMalloc(rng_states, size * sizeof(cuda_rng_t));
-    init_rng_states_kernel<<<cdiv(size, BLOCK_DIM_1D), BLOCK_DIM_1D>>>(size, *rng_states, seed);
+    init_rng_states_kernel<<<cdiv(size, BLOCK_DIM), BLOCK_DIM>>>(size, *rng_states, seed);
     cudaCheckErrors("Failed to run 'init_rng_states_kernel'.");
 }
 __host__ void curand_destroy(cuda_rng_t *rng_states){
@@ -116,6 +119,6 @@ __host__ void curand_destroy(cuda_rng_t *rng_states){
     cudaCheckErrors("Failed to free CUDA memory 'rng_states'.");
 }
 __host__ void get_curand_numbers(ssize_t size, cuda_rng_t *rng_states, scalar_t *res){
-    get_rand_numbers_kernel<<<cdiv(size, BLOCK_DIM_1D), BLOCK_DIM_1D>>>(size, rng_states, res);
+    get_rand_numbers_kernel<<<cdiv(size, BLOCK_DIM), BLOCK_DIM>>>(size, rng_states, res);
     cudaCheckErrors("Failed to run 'get_rand_numbers_kernel'.");
 }

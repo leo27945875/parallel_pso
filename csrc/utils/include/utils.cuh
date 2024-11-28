@@ -5,7 +5,9 @@
 #include <curand_kernel.h>
 
 #define MAX_NUM_BLOCK_1D 128L
-#define BLOCK_DIM_1D     256L
+#define BLOCK_DIM_X      16L
+#define BLOCK_DIM_Y      16L
+#define BLOCK_DIM        (BLOCK_DIM_X * BLOCK_DIM_Y)
 
 #define IS_TESTING                0
 #define IS_CHECK_CUDA_ERROR       1
@@ -49,10 +51,11 @@ template<>                  __forceinline__ __device__ float  _get_curand_unifor
 template<>                  __forceinline__ __device__ double _get_curand_uniform(cuda_rng_t *rng_state){ return curand_uniform_double(rng_state); }
 
 // Other helper functions:
-__host__            void     print_matrix    (scalar_t const *mat, ssize_t nrow, ssize_t ncol);
-__host__            ssize_t  get_num_block_1d(ssize_t dim);
-__host__            ssize_t  cdiv            (ssize_t total, ssize_t size);
-__host__ __device__ scalar_t pow2            (scalar_t x);
+__host__            void     print_matrix   (scalar_t const *mat, ssize_t nrow, ssize_t ncol);
+__host__            ssize_t  get_num_block_x(ssize_t dim);
+__host__            ssize_t  get_num_block_y(ssize_t dim);
+__host__            ssize_t  cdiv           (ssize_t total, ssize_t size);
+__host__ __device__ scalar_t pow2           (scalar_t x);
 
 __global__ void sum_rows_kernel       (scalar_t const *xs, scalar_t *out, ssize_t num, ssize_t dim);
 __global__ void find_global_min_kernel(scalar_t const *numbers, scalar_t *global_min_num, ssize_t *global_min_idx, ssize_t size, cuda_mutex_t *mutex);

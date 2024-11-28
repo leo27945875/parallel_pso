@@ -1,3 +1,4 @@
+import time
 import timeit
 import random
 import numpy as np
@@ -46,7 +47,7 @@ class PSO:
 
         self.vs = np.zeros((n, self.dim))
 
-    def run(self, verbose: int = 1) -> tuple[np.ndarray, float]:
+    def run(self, verbose: int = 0) -> tuple[np.ndarray, float]:
         if verbose:
             self.print_init_info(verbose)
         for i in range(self.iters):
@@ -126,9 +127,10 @@ class PSO:
     
     def update_inertia_weight(self, i: int) -> None:
         self.w = self.w_max - (self.w_max - self.w_min) * (i / self.iters)
+    
 
+if __name__ == "__main__":
 
-def main():
     seed        = None
     func        = levy_func
     dim         = 3 * 2**5
@@ -144,6 +146,9 @@ def main():
     if seed is not None:
         random.seed(seed)
         np.random.seed(seed)
+    else:
+        random.seed(int(time.time()))
+        np.random.seed(int(time.time()))
 
     pso = PSO(
         func  = func,
@@ -162,8 +167,3 @@ def main():
     else:
         t = timeit.timeit(lambda: pso.run(verbose), number=1)
         print(f"Total time = {t}(s)")
-    
-
-if __name__ == "__main__":
-
-    main()

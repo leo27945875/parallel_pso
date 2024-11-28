@@ -1,11 +1,20 @@
 LIB_NAME      := cuPSO
 GITHUB_BRANCH := cuda_version
 COMMIT_MSG    := ${m}
+DEVICE        := ${d}
 
 .PHONY: clean test stubs cm push
 
 test:
 	python -m unittest
+
+cpu:
+	python pypso.py
+gpu:
+	python pycupso.py
+perf:
+	python performance.py ${DEVICE}
+
 
 clean:
 	rm -rf build/* ${LIB_NAME}/${LIB_NAME}$(shell python3-config --extension-suffix) ${LIB_NAME}/lib${LIB_NAME}.a

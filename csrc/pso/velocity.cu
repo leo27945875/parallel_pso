@@ -14,11 +14,13 @@ __global__ void update_velocities_kernel(
     ssize_t         dim,
     cuda_rng_t     *rng_states
 ){
-    ssize_t nid = blockIdx.x;
-    ssize_t idx = blockIdx.y * blockDim.x + threadIdx.x;
+    ssize_t nid = blockIdx.x * blockDim.x + threadIdx.x;
+    ssize_t idx = blockIdx.y * blockDim.y + threadIdx.y;
 
-    for (ssize_t i = idx; i < dim; i += gridDim.y * blockDim.x){
-
+    if (nid >= num)
+        return;
+        
+    for (ssize_t i = idx; i < dim; i += gridDim.y * blockDim.y){
         // Load data into local memory:
         scalar_t v = vs[nid * dim + i];
         scalar_t x = xs[nid * dim + i];
@@ -57,15 +59,19 @@ __global__ void update_velocities_with_sum_pow2_kernel(
     ssize_t         dim,
     cuda_rng_t     *rng_states
 ){
-    __shared__ scalar_t p_smem[BLOCK_DIM_1D];
+    __shared__ scalar_t p_smem[BLOCK_DIM_X][BLOCK_DIM_Y];
 
-    ssize_t nid = blockIdx.x;
-    ssize_t bid = blockIdx.y;
-    ssize_t tid = threadIdx.x;
-    ssize_t idx = bid * blockDim.x + tid;
+    ssize_t nid = blockIdx.x * blockDim.x + threadIdx.x;
+    ssize_t idx = blockIdx.y * blockDim.y + threadIdx.y;
+    ssize_t tidx = threadIdx.x;
+    ssize_t tidy = threadIdx.y;
 
-    p_smem[tid] = 0.;
-    for (ssize_t i = idx; i < dim; i += gridDim.y * blockDim.x){
+    p_smem[tidx][tidy] = 0.;
+
+    if (nid >= num)
+        return;
+
+    for (ssize_t i = idx; i < dim; i += gridDim.y * blockDim.y){
         // Load data into local memory:
         scalar_t v = vs[nid * dim + i];
         scalar_t x = xs[nid * dim + i];
@@ -89,19 +95,19 @@ __global__ void update_velocities_with_sum_pow2_kernel(
         );
 #endif
         // Store v^2 into shared memory:
-        p_smem[tid] += v * v;
+        p_smem[tidx][tidy] += v * v;
 
         // Store v into global memory:
         vs[nid * dim + i] = v;
     }
     // Sum the squares:
-    for (ssize_t k = blockDim.x >> 1; k > 0; k >>= 1){
+    for (ssize_t k = blockDim.y >> 1; k > 0; k >>= 1){
         __syncthreads();
-        if (tid < k)
-            p_smem[tid] += p_smem[tid + k];
+        if (tidy < k)
+            p_smem[tidx][tidy] += p_smem[tidx][tidy + k];
     }
-    if (tid == 0)
-        atomicAdd(v_sum_pow2_res + nid, p_smem[0]);
+    if (tidy == 0)
+        atomicAdd(v_sum_pow2_res + nid, p_smem[tidx][0]);
 }
 
 __global__ void norm_clip_velocities_kernel(
@@ -111,13 +117,19 @@ __global__ void norm_clip_velocities_kernel(
     ssize_t   num, 
     ssize_t   dim
 ){
-    ssize_t nid = blockIdx.x;
-    ssize_t idx = blockIdx.y * blockDim.x + threadIdx.x;
+    ssize_t nid = blockIdx.x * blockDim.x + threadIdx.x;
+    ssize_t idx = blockIdx.y * blockDim.y + threadIdx.y;
+
+    if (nid >= num)
+        return;
+
     scalar_t norm = sqrt(v_sum_pow2_res[nid]); // 'Broadcast' mechanism (see https://forums.developer.nvidia.com/t/accessing-same-global-memory-address-within-warps/66574)
     if (norm <= v_max)
         return;
-    for (ssize_t i = idx; i < dim; i += gridDim.y * blockDim.x){
-        vs[nid * dim + i] *= (v_max / norm);
+
+    scalar_t scale = v_max / norm;
+    for (ssize_t i = idx; i < dim; i += gridDim.y * blockDim.y){
+        vs[nid * dim + i] *= scale;
     }
 }
 
@@ -135,8 +147,8 @@ void update_velocities_cuda(
     ssize_t         dim,
     cuda_rng_t     *rng_states_cuda_ptr
 ){
-    dim3 grid_dims(num, get_num_block_1d(dim));
-    dim3 block_dims(BLOCK_DIM_1D);
+    dim3 grid_dims(get_num_block_x(num), get_num_block_y(dim));
+    dim3 block_dims(BLOCK_DIM_X, BLOCK_DIM_Y);
 
     if (v_max <= 0.){
         update_velocities_kernel<<<grid_dims, block_dims>>>(

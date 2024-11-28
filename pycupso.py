@@ -1,5 +1,6 @@
 import cuPSO
 
+import time
 import timeit
 import random
 import numpy as np
@@ -22,7 +23,7 @@ class PSO_CUDA:
         v_max  : float        = float("inf"),
         x_max  : float        = 5.,
         x_min  : float        = -5.,
-        seed   : int          = 0,
+        seed   : int | None   = None,
         device : cuPSO.Device = cuPSO.Device.GPU
     ) -> None:
         self.func   = cuPSO.calc_fitness_val_npy
@@ -60,7 +61,7 @@ class PSO_CUDA:
         self.d_v_sum_pow2       = self.init_device_buffers()
 
         # Device RNGs:
-        self.rng_states = cuPSO.CURANDStates(self.n * self.dim, seed)
+        self.rng_states = cuPSO.CURANDStates(self.n * self.dim, seed if seed is not None else int(time.time()))
         
     def init_host_buffers(self) -> tuple[np.ndarray, ...]:
         xs              = np.array([self.x_min + (self.x_max - self.x_min) * np.random.rand(self.dim) for _ in range(self.n)])
@@ -96,7 +97,7 @@ class PSO_CUDA:
         global_best_idx = np.argmin(x_fits)
         return xs[global_best_idx], x_fits[global_best_idx: global_best_idx + 1]
 
-    def run(self, verbose: int = 1) -> tuple[np.ndarray, float]:
+    def run(self, verbose: int = 0) -> tuple[np.ndarray, float]:
         if verbose:
             self.print_init_info(verbose)
         for i in range(self.iters):
@@ -163,9 +164,10 @@ class PSO_CUDA:
     
     def update_inertia_weight(self, i: int) -> None:
         self.w = self.w_max - (self.w_max - self.w_min) * (i / self.iters)
+    
+    
+if __name__ == "__main__":
 
-
-def main():
     seed        = None
     dim         = 3 * 2**5
     n           = dim * 2**5
@@ -189,6 +191,7 @@ def main():
         x_min  = x_min,
         x_max  = x_max,
         v_max  = v_max,
+        seed   = seed,
         device = device
     )
 
@@ -199,8 +202,3 @@ def main():
     else:
         t = timeit.timeit(lambda: pso.run(verbose), number=1)
         print(f"Total time = {t}(s)")
-    
-    
-if __name__ == "__main__":
-
-    main()
