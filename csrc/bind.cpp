@@ -1,4 +1,5 @@
 #include <pybind11/pybind11.h>
+#include <iostream>
 #include "utils.cuh"
 #include "buffer.cuh"
 #include "funcs.cuh"

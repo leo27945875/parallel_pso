@@ -40,7 +40,7 @@ __global__ void levy_function_kernel(scalar_t const *xs, scalar_t *out, ssize_t 
         else
             smem[tidx][tidy] += levy_middle_func(x);
     }
-    for (ssize_t k = blockDim.x >> 1; k > 0; k >>= 1){
+    for (ssize_t k = blockDim.y >> 1; k > 0; k >>= 1){
         __syncthreads();
         if (tidy < k)
             smem[tidx][tidy] += smem[tidx][tidy + k];
@@ -66,7 +66,6 @@ scalar_t levy(scalar_t const *x, ssize_t dim){
 
 
 void levy_function_cuda(scalar_t const *xs_cuda_ptr, scalar_t *out_cuda_ptr, ssize_t num, ssize_t dim){
-    ssize_t num_block_per_x = get_num_block_y(dim);
     dim3 grid_dims(get_num_block_x(num), get_num_block_y(dim));
     dim3 block_dims(BLOCK_DIM_X, BLOCK_DIM_Y);
     cudaMemset(out_cuda_ptr, 0, num * sizeof(scalar_t));
