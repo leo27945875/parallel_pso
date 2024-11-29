@@ -100,7 +100,6 @@ void levy_function_cpu(scalar_t const *xs, scalar_t *out, ssize_t num, ssize_t d
 }
 
 void levy_function_cuda(scalar_t const *xs_cuda_ptr, scalar_t *out_cuda_ptr, ssize_t num, ssize_t dim){
-    ssize_t num_block_per_x = get_num_block_y(dim);
     dim3 grid_dims(get_num_block_x(num), get_num_block_y(dim));
     dim3 block_dims(BLOCK_DIM_X, BLOCK_DIM_Y);
     cudaMemset(out_cuda_ptr, 0, num * sizeof(scalar_t));
@@ -109,7 +108,6 @@ void levy_function_cuda(scalar_t const *xs_cuda_ptr, scalar_t *out_cuda_ptr, ssi
     cudaCheckErrors("Failed to run 'levy_function_kernel'.");
 }
 void levy_function_cuda(scalar_t const *xs_cuda_ptr, scalar_t *out_cuda_ptr, ssize_t num, ssize_t dim, ssize_t xs_pitch){
-    ssize_t num_block_per_x = get_num_block_y(dim);
     dim3 grid_dims(get_num_block_x(num), get_num_block_y(dim));
     dim3 block_dims(BLOCK_DIM_X, BLOCK_DIM_Y);
     cudaMemset(out_cuda_ptr, 0, num * sizeof(scalar_t));

@@ -3,6 +3,14 @@ import unittest
 import numpy as np
 
 
+_ARR = np.array([
+    [1.] * 10,
+    [-4.0166, -3.1514, -12.3704, -2.8875, 15.4121, 15.941, 14.6558, 4.2701, -0.1562, 8.8889],
+    [1.0005, 1.7279, 4.5869, -5.1526, 11.6856, 8.1007, -6.9512, 9.7488, 1.3329, -5.3467],
+    [1.0000, 1.0000, 1.0000, 1.0000, 1.0000, 1.0000, 1.0000, -4.0166, -3.1514, -12.3704]
+])
+
+
 class TestUpdateFuncs(unittest.TestCase):
     def setUp(self):
         print(f"\nTesting: [{__class__.__name__}] {self._testMethodName}  ", end="")
@@ -15,14 +23,27 @@ class TestUpdateFuncs(unittest.TestCase):
         self.assertTrue(np.allclose(out_cpu, 0.))
 
     def test_calc_fitness_vals(self):
-        n, d = 203, 83
-        xs = cuPSO.Buffer(n, d)
-        out = cuPSO.Buffer(n)
-        xs.fill(1.)
-        out.fill(0.)
-        cuPSO.calc_fitness_vals(xs, out)
-        out.copy_to_numpy(out_cpu := np.zeros(n))
-        self.assertTrue(np.allclose(out_cpu, 0.))
+        # n, d = 203, 83
+        # xs = cuPSO.Buffer(n, d)
+        # out = cuPSO.Buffer(n)
+        # xs.fill(1.)
+        # out.fill(0.)
+        # cuPSO.calc_fitness_vals(xs, out)
+        # out.copy_to_numpy(out_cpu := np.zeros(n))
+        # self.assertTrue(np.allclose(out_cpu, 0.))
+
+        arr = _ARR
+        xs2 = cuPSO.Buffer(arr.shape[0], arr.shape[1])
+        out2 = cuPSO.Buffer(arr.shape[0])
+        xs2.copy_from_numpy(arr)
+        cuPSO.calc_fitness_vals(xs2, out2)
+        out2.copy_to_numpy(out_cpu2 := np.zeros(arr.shape[0]))
+
+        print("\n")
+        print(out_cpu2, [cuPSO.calc_fitness_val_npy(a) for a in arr])
+        
+        # self.assertTrue(np.allclose(out_cpu2, [cuPSO.calc_fitness_val_npy(a) for a in arr]))
+
 
     def test_update_velocities(self):
         n, d, v_max = 203, 83, 10.

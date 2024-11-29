@@ -133,6 +133,7 @@ class PSO_CUDA:
         if (verbose >= 2): 
             self.d_global_best_x.copy_to_numpy(self.global_best_x)
             print(f"Inertia weight = {self.w}")
+            print(f"Global best point: {self.d_global_best_x}", end="")
             print(f"Global best point: {[round(float(x), 4) for x in self.global_best_x]}")
         print(f"Global best fitness = {self.global_best_fit[0]}")
 
@@ -169,15 +170,15 @@ class PSO_CUDA:
 if __name__ == "__main__":
 
     seed        = None
-    dim         = 1024
-    n           = 1024
-    iters       = 1000
+    dim         = 8
+    n           = 16
+    iters       = 20
     x_min       = -20
     x_max       = 20.
     v_max       = 5.
     is_make_ani = False
     markersize  = 4
-    verbose     = 0
+    verbose     = 2
     device      = cuPSO.Device.GPU
 
     if seed is not None:
@@ -200,5 +201,5 @@ if __name__ == "__main__":
         fig, ax, surf, line = plot_func(pso.func, pso.xs, x_min, x_max, markersize=markersize, is_show=False)
         make_animation(pso.step, iters, fig, line, verbose, save_path=f"assets/cuPSO_{pso.func.__name__}--{n=}_{iters=}.gif")
     else:
-        t = timeit.timeit(lambda: pso.run(verbose), number=5) / 5
+        t = timeit.timeit(lambda: pso.run(verbose), number=1) / 1
         print(f"Total time = {t}(s)")

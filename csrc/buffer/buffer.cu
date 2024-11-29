@@ -74,10 +74,10 @@ Buffer::Buffer(ssize_t nrow, ssize_t ncol, Device device)
     switch (m_device)
     {
     case Device::CPU:
-        cpu_malloc_func(&m_buffer, m_nrow, m_ncol, &m_pitch);
+        cpu_malloc_func(&m_buffer, nrow, ncol, &m_pitch);
         break;
     case Device::GPU:
-        cuda_malloc_func(&m_buffer, m_nrow, m_ncol, &m_pitch);
+        cuda_malloc_func(&m_buffer, nrow, ncol, &m_pitch);
         break;
     }
 }
@@ -220,9 +220,9 @@ std::string Buffer::to_elem_string() const {
     for (ssize_t i = 0; i < m_nrow; i++)
     for (ssize_t j = 0; j < m_ncol; j++){
         if (j == m_ncol - 1)
-            ss << std::fixed << std::setprecision(8) << tmp_buffer[i * m_nrow + j] << "\n";
+            ss << std::fixed << std::setprecision(8) << tmp_buffer[i * m_ncol + j] << "\n";
         else
-            ss << std::fixed << std::setprecision(8) << tmp_buffer[i * m_nrow + j] << ", ";
+            ss << std::fixed << std::setprecision(8) << tmp_buffer[i * m_ncol + j] << ", ";
     }
     if (m_device == Device::GPU){
         delete[] tmp_buffer;
@@ -248,6 +248,7 @@ void Buffer::to(Device device){
         break;
     }
     m_buffer = new_buffer;
+    m_pitch  = new_pitch;
     m_device = device;
 }
 void Buffer::fill(scalar_t val){

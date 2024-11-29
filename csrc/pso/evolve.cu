@@ -301,8 +301,7 @@ ssize_t update_bests_cuda(
     cudaCheckErrors("Fail to run 'assign_local_best_xs_aligned_kernel'.");
 
     // Assign the global best x according to the index of the global best x:
-    ssize_t default_pitch = dim * sizeof(scalar_t);
-    cudaMemcpy2D(global_best_x_cuda_ptr, default_pitch, ptr2d_at(xs_cuda_ptr, global_best_idx, 0, xs_pitch), xs_pitch, default_pitch, num, cudaMemcpyDeviceToDevice);
+    cudaMemcpy(global_best_x_cuda_ptr, ptr2d_at(xs_cuda_ptr, global_best_idx, 0, xs_pitch), dim * sizeof(scalar_t), cudaMemcpyDeviceToDevice);
     cudaCheckErrors("Fail to copy aligned global best x.");
     return global_best_idx;
 }
