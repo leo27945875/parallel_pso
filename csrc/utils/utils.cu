@@ -36,7 +36,12 @@ __host__ ssize_t cdiv(ssize_t total, ssize_t size){
 __host__ __device__ scalar_t pow2(scalar_t x){
     return x * x;
 }
-
+__host__ __device__ scalar_t *ptr2d_at(scalar_t *mat, ssize_t row, ssize_t col, ssize_t pitch){
+    return (scalar_t *)((char *)mat + row * pitch + col * sizeof(scalar_t));
+}
+__host__ __device__ scalar_t const *ptr2d_at(scalar_t const *mat, ssize_t row, ssize_t col, ssize_t pitch){
+    return (scalar_t *)((char *)mat + row * pitch + col * sizeof(scalar_t));
+}
 
 __global__ void find_global_min_kernel(
     scalar_t const *numbers, scalar_t *global_min_num, ssize_t *global_min_idx, ssize_t size, cuda_mutex_t *mutex

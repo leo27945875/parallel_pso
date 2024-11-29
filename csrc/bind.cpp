@@ -1,4 +1,5 @@
 #include <pybind11/pybind11.h>
+
 #include "utils.cuh"
 #include "buffer.cuh"
 #include "funcs.cuh"
@@ -34,6 +35,9 @@ void binded_calc_fitness_vals(
         out.data_ptr(),
         xs.nrow(),
         xs.ncol()
+#if IS_CUDA_ALIGN_MALLOC
+      , xs.pitch()
+#endif
     );
 }
 
@@ -43,11 +47,11 @@ void binded_update_velocities(
     Buffer const &local_best_xs, 
     Buffer const &global_best_x,
     Buffer       &v_sum_pow2,
-    scalar_t             w,
-    scalar_t             c0,
-    scalar_t             c1,
-    scalar_t             v_max,
-    CURANDStates      &rng_states
+    scalar_t      w,
+    scalar_t      c0,
+    scalar_t      c1,
+    scalar_t      v_max,
+    CURANDStates &rng_states
 ){
     update_velocities_cuda(
         vs.data_ptr(),
@@ -61,6 +65,11 @@ void binded_update_velocities(
         v_max,
         xs.nrow(),
         xs.ncol(),
+#if IS_CUDA_ALIGN_MALLOC
+        vs.pitch(),
+        xs.pitch(),
+        local_best_xs.pitch(),
+#endif
         rng_states.data_ptr()
     );
 }
@@ -68,8 +77,8 @@ void binded_update_velocities(
 void binded_update_positions(
     Buffer       &xs,
     Buffer const &vs,
-    scalar_t             x_min,
-    scalar_t             x_max
+    scalar_t      x_min,
+    scalar_t      x_max
 ){
     update_positions_cuda(
         xs.data_ptr(),
@@ -78,6 +87,10 @@ void binded_update_positions(
         x_max,
         xs.nrow(),
         vs.ncol()
+#if IS_CUDA_ALIGN_MALLOC
+      , xs.pitch(),
+        vs.pitch()
+#endif
     );
 }
 
@@ -98,6 +111,10 @@ ssize_t binded_update_bests(
         global_best_fit.data_ptr(),
         xs.nrow(),
         xs.ncol()
+#if IS_CUDA_ALIGN_MALLOC
+      , xs.pitch(),
+        local_best_xs.pitch()
+#endif
     );
 }
 

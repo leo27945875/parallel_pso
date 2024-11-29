@@ -2,6 +2,7 @@
 #include <sstream>
 #include <algorithm>
 #include <stdexcept>
+
 #include <thrust/fill.h>
 #include <thrust/device_ptr.h>
 
@@ -17,7 +18,6 @@ __global__ void cuda_fill_2d_kernel(scalar_t *data_ptr, ssize_t nrow, ssize_t nc
     }
 }
 
-
 static void cpu_malloc_func(scalar_t **ptr, ssize_t nrow, ssize_t ncol, ssize_t *pitch){
     *ptr = new scalar_t[nrow * ncol];
     *pitch = ncol * sizeof(scalar_t);
@@ -29,7 +29,12 @@ static void cpu_memcpy_func(scalar_t *dst, scalar_t const *src, ssize_t nrow, ss
 
 static void cuda_malloc_func(scalar_t **ptr, ssize_t nrow, ssize_t ncol, ssize_t *pitch){
 #if IS_CUDA_ALIGN_MALLOC
-    cudaMallocPitch(ptr, reinterpret_cast<size_t*>(pitch), ncol * sizeof(scalar_t), nrow);
+    if (nrow == 1 || ncol == 1){
+        cudaMalloc(ptr, ncol * nrow * sizeof(scalar_t));
+        *pitch = ncol * sizeof(scalar_t);
+    }else{
+        cudaMallocPitch(ptr, reinterpret_cast<size_t*>(pitch), ncol * sizeof(scalar_t), nrow);
+    }
 #else
     cudaMalloc(ptr, ncol * nrow * sizeof(scalar_t));
     *pitch = ncol * sizeof(scalar_t);
@@ -188,6 +193,9 @@ ssize_t Buffer::buffer_size() const {
 ssize_t Buffer::padded_size() const {
     return m_nrow * m_pitch;
 }
+ssize_t Buffer::pitch() const {
+    return m_pitch;
+}
 ssize_t Buffer::default_pitch() const {
     return m_ncol * sizeof(scalar_t);
 }
@@ -199,7 +207,7 @@ bool Buffer::is_same_device(Buffer const &other) const {
 }
 std::string Buffer::to_string() const {
     std::stringstream ss;
-    ss << "<Buffer shape=(" << m_nrow << ", " << m_ncol << ") device=" << ((m_device == Device::CPU)? "CPU": "GPU") << " @" << (uintptr_t)this << ">";
+    ss << "<Buffer shape=(" << m_nrow << ", " << m_ncol << ") device=" << ((m_device == Device::CPU)? "CPU": "GPU") << " pitch=" << m_pitch << " @" << (uintptr_t)this << ">";
     return ss.str();
 }
 std::string Buffer::to_elem_string() const {

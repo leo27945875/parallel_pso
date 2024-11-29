@@ -100,9 +100,9 @@ class TestBuffer(unittest.TestCase):
     
     def test_buffer_string(self):
         buffer = cuPSO.Buffer(10, 15, cuPSO.Device.CPU)
-        self.assertTrue(repr(buffer).startswith("<Buffer shape=(10, 15) device=CPU @"))
+        self.assertTrue(repr(buffer).startswith("<Buffer shape=(10, 15) device=CPU pitch="))
         buffer.to(cuPSO.Device.GPU)
-        self.assertTrue(repr(buffer).startswith("<Buffer shape=(10, 15) device=GPU @"))
+        self.assertTrue(repr(buffer).startswith("<Buffer shape=(10, 15) device=GPU pitch="))
 
     def test_buffer_elem_string(self):
         buffer = cuPSO.Buffer(10, 15, cuPSO.Device.CPU)

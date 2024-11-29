@@ -42,6 +42,7 @@ public:
     ssize_t     num_elem      () const;
     ssize_t     buffer_size   () const;
     ssize_t     padded_size   () const;
+    ssize_t     pitch         () const;
     ssize_t     default_pitch () const;
     bool        is_same_shape (Buffer const &other) const;
     bool        is_same_device(Buffer const &other) const;

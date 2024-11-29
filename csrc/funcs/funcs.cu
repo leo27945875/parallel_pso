@@ -19,6 +19,7 @@ __host__ __device__ scalar_t levy_middle_func(scalar_t x){
     return pow2(w - 1.) * (1. + 10. * pow2(sin(M_PI * w + 1.)));
 }
 
+
 __global__ void levy_function_kernel(scalar_t const *xs, scalar_t *out, ssize_t num, ssize_t dim){
     __shared__ scalar_t smem[BLOCK_DIM_X][BLOCK_DIM_Y];
     ssize_t nid = blockIdx.x * blockDim.x + threadIdx.x;
@@ -33,6 +34,35 @@ __global__ void levy_function_kernel(scalar_t const *xs, scalar_t *out, ssize_t 
         
     for (ssize_t i = idx; i < dim; i += gridDim.y * blockDim.y){
         scalar_t x = xs[nid * dim + i];
+        if (i == 0)
+            smem[tidx][tidy] += levy_head_func(x) + levy_middle_func(x);
+        else if (i == dim - 1)
+            smem[tidx][tidy] += levy_tail_func(x);
+        else
+            smem[tidx][tidy] += levy_middle_func(x);
+    }
+    for (ssize_t k = blockDim.x >> 1; k > 0; k >>= 1){
+        __syncthreads();
+        if (tidy < k)
+            smem[tidx][tidy] += smem[tidx][tidy + k];
+    }
+    if (tidy == 0)
+        atomicAdd(out + nid, smem[tidx][0]);
+}
+__global__ void levy_function_aligned_kernel(scalar_t const *xs, scalar_t *out, ssize_t num, ssize_t dim, ssize_t xs_pitch){
+    __shared__ scalar_t smem[BLOCK_DIM_X][BLOCK_DIM_Y];
+    ssize_t nid = blockIdx.x * blockDim.x + threadIdx.x;
+    ssize_t idx = blockIdx.y * blockDim.y + threadIdx.y;
+    ssize_t tidx = threadIdx.x;
+    ssize_t tidy = threadIdx.y;
+
+    smem[tidx][tidy] = 0.;
+
+    if (nid >= num)
+        return;
+    
+    for (ssize_t i = idx; i < dim; i += gridDim.y * blockDim.y){
+        scalar_t x = *ptr2d_at(xs, nid, i, xs_pitch);
         if (i == 0)
             smem[tidx][tidy] += levy_head_func(x) + levy_middle_func(x);
         else if (i == dim - 1)
@@ -64,6 +94,10 @@ scalar_t levy(scalar_t const *x, ssize_t dim){
     return out;
 }
 
+void levy_function_cpu(scalar_t const *xs, scalar_t *out, ssize_t num, ssize_t dim){
+    for (ssize_t nid = 0; nid < num; nid++)
+        out[nid] = levy(xs + nid * dim, dim);
+}
 
 void levy_function_cuda(scalar_t const *xs_cuda_ptr, scalar_t *out_cuda_ptr, ssize_t num, ssize_t dim){
     ssize_t num_block_per_x = get_num_block_y(dim);
@@ -74,8 +108,12 @@ void levy_function_cuda(scalar_t const *xs_cuda_ptr, scalar_t *out_cuda_ptr, ssi
     levy_function_kernel<<<grid_dims, block_dims>>>(xs_cuda_ptr, out_cuda_ptr, num, dim); 
     cudaCheckErrors("Failed to run 'levy_function_kernel'.");
 }
-
-void levy_function_cpu(scalar_t const *xs, scalar_t *out, ssize_t num, ssize_t dim){
-    for (ssize_t nid = 0; nid < num; nid++)
-        out[nid] = levy(xs + nid * dim, dim);
+void levy_function_cuda(scalar_t const *xs_cuda_ptr, scalar_t *out_cuda_ptr, ssize_t num, ssize_t dim, ssize_t xs_pitch){
+    ssize_t num_block_per_x = get_num_block_y(dim);
+    dim3 grid_dims(get_num_block_x(num), get_num_block_y(dim));
+    dim3 block_dims(BLOCK_DIM_X, BLOCK_DIM_Y);
+    cudaMemset(out_cuda_ptr, 0, num * sizeof(scalar_t));
+    cudaCheckErrors("Failed to zero out buffer 'out_cuda_ptr'.");
+    levy_function_aligned_kernel<<<grid_dims, block_dims>>>(xs_cuda_ptr, out_cuda_ptr, num, dim, xs_pitch); 
+    cudaCheckErrors("Failed to run 'levy_function_kernel'.");
 }

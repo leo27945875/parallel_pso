@@ -9,7 +9,7 @@ ssize_t update_best_fits_cuda(
     ssize_t         num
 );
 
-ssize_t update_bests_cuda(
+ssize_t update_bests_cuda( 
     scalar_t const *xs_cuda_ptr,
     scalar_t const *x_fits_cuda_ptr,
     scalar_t       *local_best_xs_cuda_ptr,
@@ -18,4 +18,16 @@ ssize_t update_bests_cuda(
     scalar_t       *global_best_fit_cuda_ptr,
     ssize_t         num,
     ssize_t         dim
+);
+ssize_t update_bests_cuda(
+    scalar_t const *xs_cuda_ptr,
+    scalar_t const *x_fits_cuda_ptr,
+    scalar_t       *local_best_xs_cuda_ptr,
+    scalar_t       *local_best_fits_cuda_ptr,
+    scalar_t       *global_best_x_cuda_ptr,
+    scalar_t       *global_best_fit_cuda_ptr,
+    ssize_t         num,
+    ssize_t         dim,
+    ssize_t         xs_pitch,
+    ssize_t         local_best_xs_pitch
 );
