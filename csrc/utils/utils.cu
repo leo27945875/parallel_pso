@@ -33,9 +33,6 @@ __host__ ssize_t get_num_block_y(ssize_t dim){
 __host__ ssize_t cdiv(ssize_t total, ssize_t size){
     return (total + size - 1) / size;
 }
-__host__ __device__ scalar_t pow2(scalar_t x){
-    return x * x;
-}
 __host__ __device__ scalar_t *ptr2d_at(scalar_t *mat, ssize_t row, ssize_t col, ssize_t pitch){
     return (scalar_t *)((char *)mat + row * pitch + col * sizeof(scalar_t));
 }

@@ -55,9 +55,10 @@ __host__            void            print_matrix   (scalar_t const *mat, ssize_t
 __host__            ssize_t         get_num_block_x(ssize_t dim);
 __host__            ssize_t         get_num_block_y(ssize_t dim);
 __host__            ssize_t         cdiv           (ssize_t total, ssize_t size);
-__host__ __device__ scalar_t        pow2           (scalar_t x);
 __host__ __device__ scalar_t       *ptr2d_at       (scalar_t *mat, ssize_t row, ssize_t col, ssize_t pitch);
 __host__ __device__ scalar_t const *ptr2d_at       (scalar_t const *mat, ssize_t row, ssize_t col, ssize_t pitch);
+
+static __forceinline__ __host__ __device__ scalar_t pow2(scalar_t x){ return x * x; }
 
 __global__ void sum_rows_kernel       (scalar_t const *xs, scalar_t *out, ssize_t num, ssize_t dim);
 __global__ void find_global_min_kernel(scalar_t const *numbers, scalar_t *global_min_num, ssize_t *global_min_idx, ssize_t size, cuda_mutex_t *mutex);
