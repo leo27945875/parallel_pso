@@ -8,6 +8,56 @@
 #include "buffer.cuh"
 
 
+__global__ void cuda_fill_2d_kernel(scalar_t *data_ptr, ssize_t nrow, ssize_t ncol, ssize_t pitch, scalar_t val){
+    ssize_t xidx = blockDim.x * blockIdx.x + threadIdx.x;
+    ssize_t yidx = blockDim.y * blockIdx.y + threadIdx.y;
+    for (ssize_t r = xidx; r < nrow; r += gridDim.x * blockDim.x)
+    for (ssize_t c = yidx; c < ncol; c += gridDim.y * blockDim.y){
+        *(scalar_t *)((char *)data_ptr + r * pitch + c * sizeof(scalar_t)) = val;
+    }
+}
+
+
+static void cpu_malloc_func(scalar_t **ptr, ssize_t nrow, ssize_t ncol, ssize_t *pitch){
+    *ptr = new scalar_t[nrow * ncol];
+    *pitch = ncol * sizeof(scalar_t);
+}
+
+static void cpu_memcpy_func(scalar_t *dst, scalar_t const *src, ssize_t nrow, ssize_t ncol){
+    memcpy(dst, src, nrow * ncol * sizeof(scalar_t));
+}
+
+static void cuda_malloc_func(scalar_t **ptr, ssize_t nrow, ssize_t ncol, ssize_t *pitch){
+#if IS_CUDA_ALIGN_MALLOC
+    cudaMallocPitch(ptr, reinterpret_cast<size_t*>(pitch), ncol * sizeof(scalar_t), nrow);
+#else
+    cudaMalloc(ptr, ncol * nrow * sizeof(scalar_t));
+    *pitch = ncol * sizeof(scalar_t);
+#endif
+    cudaCheckErrors("Failed to allocate GPU buffer.");
+}
+
+static void cuda_memcpy_func(scalar_t *dst, scalar_t const *src, ssize_t nrow, ssize_t ncol, ssize_t dst_pitch, ssize_t src_pitch, cudaMemcpyKind kind){
+#if IS_CUDA_ALIGN_MALLOC
+    cudaMemcpy2D(dst, dst_pitch, src, src_pitch, ncol * sizeof(scalar_t), nrow, kind);
+#else
+    cudaMemcpy(dst, src, ncol * nrow * sizeof(scalar_t), kind);
+#endif
+    cudaCheckErrors("Fail to copy memory.");
+}
+
+static void cuda_fill_2d(scalar_t *data_ptr, ssize_t nrow, ssize_t ncol, ssize_t pitch, scalar_t val){
+#if IS_CUDA_ALIGN_MALLOC
+    dim3 grid_dims(get_num_block_x(nrow), get_num_block_y(ncol));
+    dim3 block_dims(BLOCK_DIM_X, BLOCK_DIM_Y);
+    cuda_fill_2d_kernel<<<grid_dims, block_dims>>>(data_ptr, nrow, ncol, pitch, val);
+#else
+    thrust::fill_n(thrust::device_ptr<scalar_t>(data_ptr), nrow * ncol, val);
+#endif
+    cudaCheckErrors("Failed to fill buffer.");
+}
+
+
 // start Buffer
 Buffer::Buffer(ssize_t nrow, ssize_t ncol, Device device)
     : m_nrow(nrow), m_ncol(ncol), m_device(device)
@@ -19,11 +69,10 @@ Buffer::Buffer(ssize_t nrow, ssize_t ncol, Device device)
     switch (m_device)
     {
     case Device::CPU:
-        m_buffer = new scalar_t[num_elem()];
+        cpu_malloc_func(&m_buffer, m_nrow, m_ncol, &m_pitch);
         break;
     case Device::GPU:
-        cudaMalloc(&m_buffer, buffer_size()); 
-        cudaCheckErrors("Failed to allocate GPU buffer.");
+        cuda_malloc_func(&m_buffer, m_nrow, m_ncol, &m_pitch);
         break;
     }
 }
@@ -33,19 +82,20 @@ Buffer::Buffer(Buffer const &other)
     switch (m_device)
     {
     case Device::CPU:
-        m_buffer = new scalar_t[num_elem()];
-        memcpy(m_buffer, other.m_buffer, buffer_size());
+        cpu_malloc_func(&m_buffer, m_nrow, m_ncol, &m_pitch);
+        cpu_memcpy_func(m_buffer, other.m_buffer, m_nrow, m_ncol);
         break;
     case Device::GPU:
-        cudaMalloc(&m_buffer, buffer_size());
-        cudaMemcpy(m_buffer, other.m_buffer, buffer_size(), cudaMemcpyDeviceToDevice);
+        cuda_malloc_func(&m_buffer, m_nrow, m_ncol, &m_pitch);
+        cuda_memcpy_func(m_buffer, other.m_buffer, m_nrow, m_ncol, m_pitch, other.m_pitch, cudaMemcpyDeviceToDevice);
         break;
     }
 }
 Buffer::Buffer(Buffer &&other) noexcept 
-    : m_nrow(other.m_nrow), m_ncol(other.m_ncol), m_device(other.m_device), m_buffer(other.m_buffer)
+    : m_nrow(other.m_nrow), m_ncol(other.m_ncol), m_device(other.m_device), m_buffer(other.m_buffer), m_pitch(other.m_pitch)
 {
     other.m_buffer = nullptr;
+    other.m_pitch  = 0;
     other.m_nrow   = 0;
     other.m_ncol   = 0;
 }
@@ -57,10 +107,10 @@ Buffer & Buffer::operator=(Buffer const &other){
     switch (m_device)
     {
     case Device::CPU:
-        memcpy(m_buffer, other.m_buffer, buffer_size());
+        cpu_memcpy_func(m_buffer, other.m_buffer, m_nrow, m_ncol);
         break;
     case Device::GPU:
-        cudaMemcpy(m_buffer, other.m_buffer, buffer_size(), cudaMemcpyDeviceToDevice);
+        cuda_memcpy_func(m_buffer, other.m_buffer, m_nrow, m_ncol, m_pitch, other.m_pitch, cudaMemcpyDeviceToDevice);
         break;
     }
     return *this;
@@ -68,10 +118,12 @@ Buffer & Buffer::operator=(Buffer const &other){
 Buffer & Buffer::operator=(Buffer &&other) noexcept {
     _release();
     m_buffer       = other.m_buffer;
+    m_pitch        = other.m_pitch;
     m_nrow         = other.m_nrow;
     m_ncol         = other.m_ncol;
     m_device       = other.m_device;
     other.m_buffer = nullptr;
+    other.m_pitch  = 0;
     other.m_nrow   = 0;
     other.m_ncol   = 0;
     return *this;
@@ -80,14 +132,14 @@ Buffer::~Buffer(){
     _release();
 }
 
-void Buffer::set_value(ssize_t row, ssize_t col, scalar_t val) {
+void Buffer::set_value(ssize_t row, ssize_t col, scalar_t val){
     switch (m_device)
     {
     case Device::CPU:
-        m_buffer[index_at(row, col)] = val;
+        *_ptr_at(row, col) = val;
         break;
     case Device::GPU:
-        cudaMemcpy(m_buffer + index_at(row, col), &val, sizeof(scalar_t), cudaMemcpyHostToDevice);
+        cudaMemcpy(_ptr_at(row, col), &val, sizeof(scalar_t), cudaMemcpyHostToDevice);
         break;
     }
 }
@@ -96,10 +148,10 @@ scalar_t Buffer::get_value(ssize_t row, ssize_t col) const {
     switch (m_device)
     {
     case Device::CPU:
-        res = m_buffer[index_at(row, col)];
+        res = *_ptr_at(row, col);
         break;
     case Device::GPU:
-        cudaMemcpy(&res, m_buffer + index_at(row, col), sizeof(scalar_t), cudaMemcpyDeviceToHost);
+        cudaMemcpy(&res, _ptr_at(row, col), sizeof(scalar_t), cudaMemcpyDeviceToHost);
         break;
     }
     return res;
@@ -133,8 +185,11 @@ ssize_t Buffer::num_elem() const {
 ssize_t Buffer::buffer_size() const {
     return m_nrow * m_ncol * sizeof(scalar_t);
 }
-ssize_t Buffer::index_at(ssize_t row, ssize_t col) const {
-    return row * m_ncol + col;
+ssize_t Buffer::padded_size() const {
+    return m_nrow * m_pitch;
+}
+ssize_t Buffer::default_pitch() const {
+    return m_ncol * sizeof(scalar_t);
 }
 bool Buffer::is_same_shape(Buffer const &other) const {
     return m_nrow == other.nrow() && m_ncol == other.ncol();
@@ -151,15 +206,15 @@ std::string Buffer::to_elem_string() const {
     scalar_t *tmp_buffer = m_buffer;
     if (m_device == Device::GPU){
         tmp_buffer = new scalar_t[num_elem()];
-        cudaMemcpy(tmp_buffer, m_buffer, buffer_size(), cudaMemcpyDeviceToHost);
+        cuda_memcpy_func(tmp_buffer, m_buffer, m_nrow, m_ncol, default_pitch(), m_pitch, cudaMemcpyDeviceToHost);
     }
     std::stringstream ss;
     for (ssize_t i = 0; i < m_nrow; i++)
     for (ssize_t j = 0; j < m_ncol; j++){
         if (j == m_ncol - 1)
-            ss << std::fixed << std::setprecision(8) << tmp_buffer[index_at(i, j)] << "\n";
+            ss << std::fixed << std::setprecision(8) << tmp_buffer[i * m_nrow + j] << "\n";
         else
-            ss << std::fixed << std::setprecision(8) << tmp_buffer[index_at(i, j)] << ", ";
+            ss << std::fixed << std::setprecision(8) << tmp_buffer[i * m_nrow + j] << ", ";
     }
     if (m_device == Device::GPU){
         delete[] tmp_buffer;
@@ -169,17 +224,18 @@ std::string Buffer::to_elem_string() const {
 void Buffer::to(Device device){
     if (m_device == device)
         return;
-    scalar_t *new_buffer;
+    ssize_t   new_pitch;
+    scalar_t *new_buffer; 
     switch (m_device)
     {
     case Device::CPU:
-        cudaMalloc(&new_buffer, buffer_size());
-        cudaMemcpy(new_buffer, m_buffer, buffer_size(), cudaMemcpyHostToDevice);
+        cuda_malloc_func(&new_buffer, m_nrow, m_ncol, &new_pitch);
+        cuda_memcpy_func(new_buffer, m_buffer, m_nrow, m_ncol, new_pitch, m_pitch, cudaMemcpyHostToDevice);
         delete[] m_buffer;
         break;
     case Device::GPU:
-        new_buffer = new scalar_t[num_elem()];
-        cudaMemcpy(new_buffer, m_buffer, buffer_size(), cudaMemcpyDeviceToHost);
+        cpu_malloc_func(&new_buffer, m_nrow, m_ncol, &new_pitch);
+        cuda_memcpy_func(new_buffer, m_buffer, m_nrow, m_ncol, new_pitch, m_pitch, cudaMemcpyDeviceToHost);
         cudaFree(m_buffer);
         break;
     }
@@ -193,12 +249,11 @@ void Buffer::fill(scalar_t val){
         std::fill_n(m_buffer, num_elem(), val);
         break;
     case Device::GPU:
-        thrust::device_ptr<scalar_t> dev_ptr(m_buffer);
-        thrust::fill_n(dev_ptr, num_elem(), val); 
+        cuda_fill_2d(m_buffer, m_nrow, m_ncol, m_pitch, val);
         break;
     }
 }
-void Buffer::show(){
+void Buffer::show() const {
     for (ssize_t i = 0; i < m_nrow; i++)
     for (ssize_t j = 0; j < m_ncol; j++){
         if (j == m_ncol - 1)
@@ -210,10 +265,49 @@ void Buffer::show(){
 void Buffer::clear(){
     _release();
     m_buffer = nullptr;
+    m_pitch  = 0;
     m_nrow   = 0;
     m_ncol   = 0;
 }
 
+void Buffer::copy_to_numpy(ndarray_t<scalar_t> &out) const {
+    if (out.nbytes() != buffer_size())
+        throw std::runtime_error("Size of numpy array does not match this buffer.");
+    
+    switch (m_device)
+    {
+    case Device::CPU:
+        cpu_memcpy_func(out.mutable_data(), m_buffer, m_nrow, m_ncol);
+        break;
+    case Device::GPU:
+        cuda_memcpy_func(out.mutable_data(), m_buffer, m_nrow, m_ncol, default_pitch(), m_pitch, cudaMemcpyDeviceToHost);
+        break;
+    }
+}
+void Buffer::copy_from_numpy(ndarray_t<scalar_t> const &src){
+    if (src.nbytes() != buffer_size())
+        throw std::runtime_error("Size of numpy array does not match this buffer.");
+    
+    switch (m_device)
+    {
+    case Device::CPU:
+        cpu_memcpy_func(m_buffer, src.data(), m_nrow, m_ncol);
+        break;
+    case Device::GPU:
+        cuda_memcpy_func(m_buffer, src.data(), m_nrow, m_ncol, m_pitch, default_pitch(), cudaMemcpyHostToDevice);
+        break;
+    }
+}
+void Buffer::copy_to_buffer(Buffer &out) const {
+    out = *this;
+}
+void Buffer::copy_from_buffer(Buffer const &src){
+    *this = src;
+}
+
+scalar_t * Buffer::_ptr_at(ssize_t row, ssize_t col) const {
+    return (scalar_t *)((char *)m_buffer + row * m_pitch + col * sizeof(scalar_t));
+}
 void Buffer::_release(){
     if (!m_buffer)
         return;
@@ -227,47 +321,6 @@ void Buffer::_release(){
         cudaCheckErrors("Failed to free GPU buffer.");
         break;
     }
-}
-
-void Buffer::copy_to_numpy(ndarray_t<scalar_t> &out) const {
-    ssize_t buf_buffer_size = buffer_size();
-    ssize_t npy_buffer_size = out.nbytes();
-
-    if (npy_buffer_size != buf_buffer_size)
-        throw std::runtime_error("Size of numpy array does not match this buffer.");
-    
-    switch (m_device)
-    {
-    case Device::CPU:
-        memcpy(out.mutable_data(), m_buffer, buf_buffer_size);
-        break;
-    case Device::GPU:
-        cudaMemcpy(out.mutable_data(), m_buffer, buf_buffer_size, cudaMemcpyDeviceToHost);
-        break;
-    }
-}
-void Buffer::copy_from_numpy(ndarray_t<scalar_t> const &src){
-    ssize_t buf_buffer_size = buffer_size();
-    ssize_t npy_buffer_size = src.nbytes();
-
-    if (npy_buffer_size != buf_buffer_size)
-        throw std::runtime_error("Size of numpy array does not match this buffer.");
-    
-    switch (m_device)
-    {
-    case Device::CPU:
-        memcpy(m_buffer, src.data(), buf_buffer_size);
-        break;
-    case Device::GPU:
-        cudaMemcpy(m_buffer, src.data(), buf_buffer_size, cudaMemcpyHostToDevice);
-        break;
-    }
-}
-void Buffer::copy_to_buffer(Buffer &out) const {
-    out = *this;
-}
-void Buffer::copy_from_buffer(Buffer const &out){
-    *this = out;
 }
 // end Buffer
 

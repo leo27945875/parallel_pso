@@ -41,29 +41,31 @@ public:
     ssize_t     ncol          () const;
     ssize_t     num_elem      () const;
     ssize_t     buffer_size   () const;
-    ssize_t     index_at      (ssize_t row, ssize_t col) const;
+    ssize_t     padded_size   () const;
+    ssize_t     default_pitch () const;
     bool        is_same_shape (Buffer const &other) const;
     bool        is_same_device(Buffer const &other) const;
     std::string to_string     () const;
     std::string to_elem_string() const;
-
-    void to   (Device device);
-    void fill (scalar_t val);
-    void show();
-    void clear();
+    void        show          () const;
+    void        to            (Device device);
+    void        fill          (scalar_t val);
+    void        clear         ();
 
     void copy_to_numpy   (ndarray_t<scalar_t>       &out) const;
-    void copy_from_numpy (ndarray_t<scalar_t> const &src)      ;
+    void copy_from_numpy (ndarray_t<scalar_t> const &src);
     void copy_to_buffer  (Buffer                    &out) const;
-    void copy_from_buffer(Buffer              const &out)      ;
+    void copy_from_buffer(Buffer              const &src);
 
 private:
     scalar_t  *m_buffer;
     ssize_t    m_nrow;
     ssize_t    m_ncol;
+    ssize_t    m_pitch;
     Device     m_device;
 
-    void _release();
+    scalar_t * _ptr_at (ssize_t row, ssize_t col) const;
+    void       _release();
 };
 
 
