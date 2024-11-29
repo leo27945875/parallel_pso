@@ -70,7 +70,7 @@ __global__ void levy_function_aligned_kernel(scalar_t const *xs, scalar_t *out, 
         else
             smem[tidx][tidy] += levy_middle_func(x);
     }
-    for (ssize_t k = blockDim.x >> 1; k > 0; k >>= 1){
+    for (ssize_t k = blockDim.y >> 1; k > 0; k >>= 1){
         __syncthreads();
         if (tidy < k)
             smem[tidx][tidy] += smem[tidx][tidy + k];

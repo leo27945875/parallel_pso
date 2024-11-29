@@ -24,6 +24,14 @@ __host__ void print_matrix(scalar_t const *mat, ssize_t nrow, ssize_t ncol){
         printf("\n");
     }
 }
+__host__ void print_cuda_matrix(scalar_t const *mat, ssize_t nrow, ssize_t ncol){
+    scalar_t *tmp = new scalar_t[nrow * ncol];
+    cudaMemcpy(tmp, mat, nrow * ncol * sizeof(scalar_t), cudaMemcpyDeviceToHost);
+    cudaCheckErrors("Failed to copy matrix to host.");
+    print_matrix(tmp, nrow, ncol);
+    delete[] tmp;
+}
+
 __host__ ssize_t get_num_block_x(ssize_t dim){
     return cdiv(dim, BLOCK_DIM_X);
 }
@@ -32,12 +40,6 @@ __host__ ssize_t get_num_block_y(ssize_t dim){
 }
 __host__ ssize_t cdiv(ssize_t total, ssize_t size){
     return (total + size - 1) / size;
-}
-__host__ __device__ scalar_t *ptr2d_at(scalar_t *mat, ssize_t row, ssize_t col, ssize_t pitch){
-    return (scalar_t *)((char *)mat + row * pitch + col * sizeof(scalar_t));
-}
-__host__ __device__ scalar_t const *ptr2d_at(scalar_t const *mat, ssize_t row, ssize_t col, ssize_t pitch){
-    return (scalar_t *)((char *)mat + row * pitch + col * sizeof(scalar_t));
 }
 
 __global__ void find_global_min_kernel(

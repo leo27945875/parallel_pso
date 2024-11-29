@@ -11,7 +11,7 @@
 
 #define IS_TESTING                0
 #define IS_CHECK_CUDA_ERROR       1
-#define IS_CUDA_ALIGN_MALLOC      0
+#define IS_CUDA_ALIGN_MALLOC      1
 #define IS_GLOBAL_BEST_USE_ATOMIC 1
 
 // Error checking macro
@@ -51,14 +51,16 @@ template<>                  __forceinline__ __device__ float  _get_curand_unifor
 template<>                  __forceinline__ __device__ double _get_curand_uniform(cuda_rng_t *rng_state){ return curand_uniform_double(rng_state); }
 
 // Other helper functions:
-__host__            void            print_matrix   (scalar_t const *mat, ssize_t nrow, ssize_t ncol);
-__host__            ssize_t         get_num_block_x(ssize_t dim);
-__host__            ssize_t         get_num_block_y(ssize_t dim);
-__host__            ssize_t         cdiv           (ssize_t total, ssize_t size);
-__host__ __device__ scalar_t       *ptr2d_at       (scalar_t *mat, ssize_t row, ssize_t col, ssize_t pitch);
-__host__ __device__ scalar_t const *ptr2d_at       (scalar_t const *mat, ssize_t row, ssize_t col, ssize_t pitch);
+__host__ void print_matrix     (scalar_t const *mat, ssize_t nrow, ssize_t ncol);
+__host__ void print_cuda_matrix(scalar_t const *mat, ssize_t nrow, ssize_t ncol);
 
-static __forceinline__ __host__ __device__ scalar_t pow2(scalar_t x){ return x * x; }
+__host__ ssize_t get_num_block_x(ssize_t dim);
+__host__ ssize_t get_num_block_y(ssize_t dim);
+__host__ ssize_t cdiv           (ssize_t total, ssize_t size);
+
+static __forceinline__ __host__ __device__ scalar_t         pow2    (scalar_t x){ return x * x; }
+static __forceinline__ __host__ __device__ scalar_t       * ptr2d_at(scalar_t       *mat, ssize_t row, ssize_t col, ssize_t pitch){ return (scalar_t *)((char *)mat + row * pitch + col * sizeof(scalar_t)); }
+static __forceinline__ __host__ __device__ scalar_t const * ptr2d_at(scalar_t const *mat, ssize_t row, ssize_t col, ssize_t pitch){ return (scalar_t *)((char *)mat + row * pitch + col * sizeof(scalar_t)); }
 
 __global__ void sum_rows_kernel       (scalar_t const *xs, scalar_t *out, ssize_t num, ssize_t dim);
 __global__ void find_global_min_kernel(scalar_t const *numbers, scalar_t *global_min_num, ssize_t *global_min_idx, ssize_t size, cuda_mutex_t *mutex);

@@ -232,8 +232,8 @@ std::string Buffer::to_elem_string() const {
 void Buffer::to(Device device){
     if (m_device == device)
         return;
-    ssize_t   new_pitch;
-    scalar_t *new_buffer; 
+    ssize_t   new_pitch  = 0L;
+    scalar_t *new_buffer = nullptr; 
     switch (m_device)
     {
     case Device::CPU:

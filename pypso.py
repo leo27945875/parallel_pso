@@ -132,6 +132,7 @@ class PSO:
 if __name__ == "__main__":
 
     seed        = None
+    n_test      = 10
     func        = levy_func
     dim         = 3 * 2**5
     n           = dim * 2**5
@@ -165,5 +166,5 @@ if __name__ == "__main__":
         fig, ax, surf, line = plot_func(func, pso.xs, x_min, x_max, markersize=markersize, is_show=False)
         make_animation(pso.step, iters, fig, line, verbose, save_path=f"assets/PSO_{func.__name__}--{n=}_{iters=}.gif")
     else:
-        t = timeit.timeit(lambda: pso.run(verbose), number=5) / 5
+        t = timeit.timeit(lambda: pso.run(verbose), number=n_test) / n_test
         print(f"Total time = {t}(s)")
