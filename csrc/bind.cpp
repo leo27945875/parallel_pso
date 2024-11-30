@@ -68,6 +68,7 @@ void binded_update_velocities(
         vs.pitch(),
         xs.pitch(),
         local_best_xs.pitch(),
+        rng_states.pitch(),
 #endif
         rng_states.data_ptr()
     );
@@ -147,7 +148,7 @@ PYBIND11_MODULE(cuPSO, m){
         .def("clear"           , &Buffer::clear                               );
     
     py::class_<CURANDStates>(m, "CURANDStates")
-        .def(py::init<ssize_t, unsigned long long>(), py::arg("size"), py::arg("seed"))
+        .def(py::init<unsigned long long, ssize_t, ssize_t>(), py::arg("seed"), py::arg("nrow"), py::arg("ncol"))
         .def("__repr__"   , &CURANDStates::to_string  )
         .def("__str__"    , &CURANDStates::to_string  )
         .def("num_elem"   , &CURANDStates::num_elem   )

@@ -34,7 +34,7 @@ __global__ void update_velocities_kernel(
             c0 * _get_curand_uniform<scalar_t>(&thread_rng_state) * (lbest_x - x) + 
             c1 * _get_curand_uniform<scalar_t>(&thread_rng_state) * (gbest_x - x)
         );
-        rng_states[nid * dim + idx] = thread_rng_state;
+        rng_states[nid * dim + i] = thread_rng_state;
     }
 }
 __global__ void update_velocities_aligned_kernel(
@@ -50,6 +50,7 @@ __global__ void update_velocities_aligned_kernel(
     ssize_t         vs_pitch,
     ssize_t         xs_pitch,
     ssize_t         local_best_xs_pitch,
+    ssize_t         rng_states_pitch,
     cuda_rng_t     *rng_states
 ){
     ssize_t nid = blockIdx.x * blockDim.x + threadIdx.x;
@@ -66,13 +67,13 @@ __global__ void update_velocities_aligned_kernel(
         scalar_t gbest_x = global_best_x[i];
 
         // Update velocities:
-        cuda_rng_t thread_rng_state = rng_states[nid * dim + i];
+        cuda_rng_t thread_rng_state = *ptr2d_at(rng_states, nid, i, rng_states_pitch);
         *ptr2d_at(vs, nid, i, vs_pitch) = (
             w * v + 
             c0 * _get_curand_uniform<scalar_t>(&thread_rng_state) * (lbest_x - x) + 
             c1 * _get_curand_uniform<scalar_t>(&thread_rng_state) * (gbest_x - x)
         );
-        rng_states[nid * dim + idx] = thread_rng_state;
+        *ptr2d_at(rng_states, nid, i, rng_states_pitch) = thread_rng_state;
     }
 }
 
@@ -109,13 +110,13 @@ __global__ void update_velocities_with_sum_pow2_kernel(
         scalar_t gbest_x = global_best_x[i];
 
         // Calculate new velocities:
-        cuda_rng_t thread_rng_state = rng_states[nid * dim + idx];
+        cuda_rng_t thread_rng_state = rng_states[nid * dim + i];
         v = (
             w * v + 
             c0 * _get_curand_uniform<scalar_t>(&thread_rng_state) * (lbest_x - x) + 
             c1 * _get_curand_uniform<scalar_t>(&thread_rng_state) * (gbest_x - x)
         );
-        rng_states[nid * dim + idx] = thread_rng_state;
+        rng_states[nid * dim + i] = thread_rng_state;
 
         // Store v^2 into shared memory:
         p_smem[tidx][tidy] += v * v;
@@ -146,6 +147,7 @@ __global__ void update_velocities_with_sum_pow2_aligned_kernel(
     ssize_t         vs_pitch,
     ssize_t         xs_pitch,
     ssize_t         local_best_xs_pitch,
+    ssize_t         rng_states_pitch,
     cuda_rng_t     *rng_states
 ){
     __shared__ scalar_t p_smem[BLOCK_DIM_X][BLOCK_DIM_Y];
@@ -168,13 +170,13 @@ __global__ void update_velocities_with_sum_pow2_aligned_kernel(
         scalar_t gbest_x = global_best_x[i];
 
         // Calculate new velocities:
-        cuda_rng_t thread_rng_state = rng_states[nid * dim + idx];
+        cuda_rng_t thread_rng_state = *ptr2d_at(rng_states, nid, i, rng_states_pitch);
         v = (
             w * v + 
             c0 * _get_curand_uniform<scalar_t>(&thread_rng_state) * (lbest_x - x) + 
             c1 * _get_curand_uniform<scalar_t>(&thread_rng_state) * (gbest_x - x)
         );
-        rng_states[nid * dim + idx] = thread_rng_state;
+        *ptr2d_at(rng_states, nid, i, rng_states_pitch) = thread_rng_state;
 
         // Store v^2 into shared memory:
         p_smem[tidx][tidy] += v * v;
@@ -302,6 +304,7 @@ void update_velocities_cuda(
     ssize_t         vs_pitch,
     ssize_t         xs_pitch,
     ssize_t         local_best_xs_pitch,
+    ssize_t         rng_states_pitch,
     cuda_rng_t     *rng_states_cuda_ptr
 ){
     dim3 grid_dims(get_num_block_x(num), get_num_block_y(dim));
@@ -310,7 +313,7 @@ void update_velocities_cuda(
     if (v_max <= 0.){
         update_velocities_aligned_kernel<<<grid_dims, block_dims>>>(
             vs_cuda_ptr, xs_cuda_ptr, local_best_xs_cuda_ptr, global_best_x_cuda_ptr, w, c0, c1, 
-            num, dim, vs_pitch, xs_pitch, local_best_xs_pitch, rng_states_cuda_ptr
+            num, dim, vs_pitch, xs_pitch, local_best_xs_pitch, rng_states_pitch, rng_states_cuda_ptr
         );
         cudaCheckErrors("Failed to run 'update_velocities_aligned_kernel'.");
         
@@ -325,7 +328,7 @@ void update_velocities_cuda(
 
         update_velocities_with_sum_pow2_aligned_kernel<<<grid_dims, block_dims>>>(
             vs_cuda_ptr, xs_cuda_ptr, local_best_xs_cuda_ptr, global_best_x_cuda_ptr, v_sum_pow2_cuda_ptr, w, c0, c1, num, dim, 
-            vs_pitch, xs_pitch, local_best_xs_pitch, rng_states_cuda_ptr
+            vs_pitch, xs_pitch, local_best_xs_pitch, rng_states_pitch, rng_states_cuda_ptr
         );
         cudaCheckErrors("Failed to run 'update_velocities_with_sum_pow2_aligned_kernel'.");
         

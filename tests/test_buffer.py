@@ -132,12 +132,17 @@ class TestCURAND(unittest.TestCase):
         print(f"\nTesting: [{__class__.__name__}] {self._testMethodName}  ", end="")
 
     def test_buffer_size(self):
-        states = cuPSO.CURANDStates(100, 0)
+        states = cuPSO.CURANDStates(0, 20, 5)
         self.assertEqual(states.num_elem(), 100)
         self.assertEqual(states.buffer_size(), 4800)
     
     def test_clear_buffer(self):
-        states = cuPSO.CURANDStates(100, 0)
+        states = cuPSO.CURANDStates(0, 20, 5)
         states.clear()
         self.assertEqual(states.num_elem(), 0)
         self.assertEqual(states.buffer_size(), 0)
+    
+    def test_buffer_string(self):
+        states = cuPSO.CURANDStates(0, 20, 5)
+        string = str(states)
+        self.assertTrue(string.startswith("<CURANDStates size=(20, 5) pitch="))

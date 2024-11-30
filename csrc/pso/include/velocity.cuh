@@ -31,5 +31,6 @@ void update_velocities_cuda(
     ssize_t         vs_pitch,
     ssize_t         xs_pitch,
     ssize_t         local_best_xs_pitch,
+    ssize_t         rng_states_pitch,
     cuda_rng_t     *rng_states_cuda_ptr
 );

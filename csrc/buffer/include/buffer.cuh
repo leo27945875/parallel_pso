@@ -74,7 +74,7 @@ class CURANDStates
 {
 public:
     CURANDStates            () = delete;
-    CURANDStates            (ssize_t size, unsigned long long seed);
+    CURANDStates            (unsigned long long seed, ssize_t nrow, ssize_t ncol = 1L);
     CURANDStates            (CURANDStates const  &other);
     CURANDStates            (CURANDStates       &&other) noexcept;
     CURANDStates & operator=(CURANDStates const  &other);
@@ -86,13 +86,16 @@ public:
 
     ssize_t     num_elem   () const;
     ssize_t     buffer_size() const;
+    ssize_t     pitch      () const;
     std::string to_string  () const;
 
     void clear();
 
 private:
     cuda_rng_t *m_buffer;
-    ssize_t     m_size;
+    ssize_t     m_pitch;
+    ssize_t     m_nrow;
+    ssize_t     m_ncol;
 
     void _release();
 };

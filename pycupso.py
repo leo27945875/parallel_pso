@@ -61,7 +61,7 @@ class PSO_CUDA:
         self.d_v_sum_pow2       = self.init_device_buffers()
 
         # Device RNGs:
-        self.rng_states = cuPSO.CURANDStates(self.n * self.dim, seed if seed is not None else int(time.time()))
+        self.rng_states = cuPSO.CURANDStates(seed if seed is not None else int(time.time()), self.n, self.dim)
         
     def init_host_buffers(self) -> tuple[np.ndarray, ...]:
         xs              = np.array([self.x_min + (self.x_max - self.x_min) * np.random.rand(self.dim) for _ in range(self.n)])
@@ -169,7 +169,7 @@ class PSO_CUDA:
 if __name__ == "__main__":
 
     seed        = None
-    n_test      = 10
+    n_test      = 30
     dim         = 1024
     n           = 1024
     iters       = 1000

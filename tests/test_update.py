@@ -37,7 +37,7 @@ class TestUpdateFuncs(unittest.TestCase):
         local_best_xs = cuPSO.Buffer(n, d)
         global_best_x = cuPSO.Buffer(1, d)
         v_sum_pow2 = cuPSO.Buffer(n)
-        rng_states = cuPSO.CURANDStates(n * d, 0)
+        rng_states = cuPSO.CURANDStates(0, n, d)
 
         vs_cpu = np.zeros((n, d))
         v_sum_pow2_cpu = np.zeros(n)

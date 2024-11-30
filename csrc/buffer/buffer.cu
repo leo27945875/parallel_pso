@@ -41,12 +41,34 @@ static void cuda_malloc_func(scalar_t **ptr, ssize_t nrow, ssize_t ncol, ssize_t
 #endif
     cudaCheckErrors("Failed to allocate GPU buffer.");
 }
+static void cuda_malloc_func(cuda_rng_t **ptr, ssize_t nrow, ssize_t ncol, ssize_t *pitch){
+#if IS_CUDA_ALIGN_MALLOC
+    if (nrow == 1 || ncol == 1){
+        cudaMalloc(ptr, ncol * nrow * sizeof(cuda_rng_t));
+        *pitch = ncol * sizeof(cuda_rng_t);
+    }else{
+        cudaMallocPitch(ptr, reinterpret_cast<size_t*>(pitch), ncol * sizeof(cuda_rng_t), nrow);
+    }
+#else
+    cudaMalloc(ptr, ncol * nrow * sizeof(cuda_rng_t));
+    *pitch = ncol * sizeof(cuda_rng_t);
+#endif
+    cudaCheckErrors("Failed to allocate GPU buffer.");
+}
 
 static void cuda_memcpy_func(scalar_t *dst, scalar_t const *src, ssize_t nrow, ssize_t ncol, ssize_t dst_pitch, ssize_t src_pitch, cudaMemcpyKind kind){
 #if IS_CUDA_ALIGN_MALLOC
     cudaMemcpy2D(dst, dst_pitch, src, src_pitch, ncol * sizeof(scalar_t), nrow, kind);
 #else
     cudaMemcpy(dst, src, ncol * nrow * sizeof(scalar_t), kind);
+#endif
+    cudaCheckErrors("Fail to copy memory.");
+}
+static void cuda_memcpy_func(cuda_rng_t *dst, cuda_rng_t const *src, ssize_t nrow, ssize_t ncol, ssize_t dst_pitch, ssize_t src_pitch, cudaMemcpyKind kind){
+#if IS_CUDA_ALIGN_MALLOC
+    cudaMemcpy2D(dst, dst_pitch, src, src_pitch, ncol * sizeof(cuda_rng_t), nrow, kind);
+#else
+    cudaMemcpy(dst, src, ncol * nrow * sizeof(cuda_rng_t), kind);
 #endif
     cudaCheckErrors("Fail to copy memory.");
 }
@@ -334,36 +356,41 @@ void Buffer::_release(){
 // end Buffer
 
 // start CURANDStates
-CURANDStates::CURANDStates(ssize_t size, unsigned long long seed) 
-    : m_size(size) 
+CURANDStates::CURANDStates(unsigned long long seed, ssize_t nrow, ssize_t ncol) 
+    : m_nrow(nrow), m_ncol(ncol) 
 {
-    curand_setup(size, seed, &m_buffer);
+    curand_setup(nrow, ncol, seed, &m_buffer, &m_pitch);
 }
 CURANDStates::CURANDStates(CURANDStates const &other)
-    : m_size(other.m_size)
+    : m_nrow(other.m_nrow), m_ncol(other.m_ncol)
 {
-    cudaMalloc(&m_buffer, buffer_size());
-    cudaMemcpy(m_buffer, other.m_buffer, buffer_size(), cudaMemcpyDeviceToDevice);
+    cuda_malloc_func(&m_buffer, m_nrow, m_ncol, &m_pitch);
+    cuda_memcpy_func(m_buffer, other.m_buffer, m_nrow, m_ncol, m_pitch, other.m_pitch, cudaMemcpyDeviceToDevice);
 }
 CURANDStates::CURANDStates(CURANDStates &&other) noexcept
-    : m_size(other.m_size), m_buffer(other.m_buffer)
+    : m_nrow(other.m_nrow), m_ncol(other.m_ncol), m_buffer(other.m_buffer), m_pitch(other.m_pitch)
 {
     other.m_buffer = nullptr;
-    other.m_size   = 0;
+    other.m_pitch  = 0;
+    other.m_nrow   = 0;
+    other.m_ncol   = 0;
 }
 CURANDStates & CURANDStates::operator=(CURANDStates const &other){
-    if (m_size != other.m_size)
+    if (m_nrow != other.m_nrow || m_ncol != other.m_ncol)
         throw std::runtime_error("Shapes do not match.");
-    cudaMemcpy(m_buffer, other.m_buffer, buffer_size(), cudaMemcpyDeviceToDevice);
-    m_size = other.m_size;
+    cuda_memcpy_func(m_buffer, other.m_buffer, m_nrow, m_ncol, m_pitch, other.m_pitch, cudaMemcpyDeviceToDevice);
     return *this;
 }
 CURANDStates & CURANDStates::operator=(CURANDStates &&other) noexcept {
     _release();
     m_buffer       = other.m_buffer;
-    m_size         = other.m_size;
+    m_pitch        = other.m_pitch;
+    m_nrow         = other.m_nrow;
+    m_ncol         = other.m_ncol;
     other.m_buffer = nullptr;
-    other.m_size   = 0;
+    other.m_pitch  = 0;
+    other.m_nrow   = 0;
+    other.m_ncol   = 0;
     return *this;
 }
 CURANDStates::~CURANDStates(){
@@ -378,21 +405,26 @@ cuda_rng_t const * CURANDStates::cdata_ptr() const {
 }
 
 ssize_t CURANDStates::num_elem() const {
-    return m_size;
+    return m_nrow * m_ncol;
 }
 ssize_t CURANDStates::buffer_size() const {
-    return m_size * sizeof(cuda_rng_t);
+    return m_nrow * m_ncol * sizeof(cuda_rng_t);
+}
+ssize_t CURANDStates::pitch() const {
+    return m_pitch;
 }
 std::string CURANDStates::to_string() const {
     std::stringstream ss;
-    ss << "<CURANDStates size=" << m_size << " device=GPU @" << (uintptr_t)this << ">";
+    ss << "<CURANDStates size=(" << m_nrow << ", " << m_ncol << ") pitch=" << m_pitch << " device=GPU @" << (uintptr_t)this << ">";
     return ss.str();
 }
 
 void CURANDStates::clear(){
     _release();
     m_buffer = nullptr;
-    m_size   = 0;
+    m_pitch  = 0;
+    m_nrow   = 0;
+    m_ncol   = 0;
 }
 
 void CURANDStates::_release(){
