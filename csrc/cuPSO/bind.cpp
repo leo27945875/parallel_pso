@@ -159,7 +159,7 @@ PYBIND11_MODULE(cuPSO, m){
     m.def("calc_fitness_vals_npy", &binded_calc_fitness_vals_npy, py::arg("xs"), py::arg("out"));
     m.def("calc_fitness_vals"    , &binded_calc_fitness_vals    , py::arg("xs"), py::arg("out"));
     
-    m.def("update_velocities", &binded_update_velocities, py::arg("xs"), py::arg("vs")    , py::arg("local_best_xs"), py::arg("global_best_x"), py::arg("v_sum_pow2"), py::arg("w"), py::arg("c0"), py::arg("c1"), py::arg("v_max"), py::arg("rng_states"));
-    m.def("update_positions" , &binded_update_positions , py::arg("xs"), py::arg("vs")    , py::arg("x_min")        , py::arg("x_max")                                                                                                                    );
-    m.def("update_bests"     , &binded_update_bests     , py::arg("xs"), py::arg("x_fits"), py::arg("local_best_xs"), py::arg("local_best_fits"), py::arg("global_best_x"), py::arg("global_best_fit")                                                    );
+    m.def("update_positions" , &binded_update_positions , py::arg("xs"), py::arg("vs"), py::arg("x_min"), py::arg("x_max"));
+    m.def("update_bests"     , &binded_update_bests     , py::arg("xs"), py::arg("x_fits"), py::arg("local_best_xs"), py::arg("local_best_fits"), py::arg("global_best_x"), py::arg("global_best_fit"));
+    m.def("update_velocities", &binded_update_velocities, py::arg("xs"), py::arg("vs"), py::arg("local_best_xs"), py::arg("global_best_x"), py::arg("v_sum_pow2"), py::arg("w"), py::arg("c0"), py::arg("c1"), py::arg("v_max"), py::arg("rng_states"));
 }

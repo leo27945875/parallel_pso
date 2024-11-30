@@ -72,7 +72,7 @@ void test_mutex(
 
     cuda_mutex_t *mutex;
     cuda_create_mutex(&mutex);
-    find_global_min_kernel<<<get_num_block_y(num), BLOCK_DIM_1D>>>(d_arr, d_global_min_num, d_global_min_idx, num, mutex);
+    find_global_min_kernel<<<get_num_block_y(num), BLOCK_DIM>>>(d_arr, d_global_min_num, d_global_min_idx, num, mutex);
     cuda_destroy_mutex(mutex);
 
     cudaMemcpy(&h_global_min_num, d_global_min_num, sizeof(scalar_t), cudaMemcpyDeviceToHost);
