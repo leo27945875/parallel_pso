@@ -170,8 +170,8 @@ if __name__ == "__main__":
 
     seed        = None
     n_test      = 30
-    dim         = 1024
-    n           = 1024
+    dim         = 260
+    n           = 100000
     iters       = 1000
     x_min       = -20
     x_max       = 20.
