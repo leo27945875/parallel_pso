@@ -4,10 +4,10 @@ import time
 import timeit
 import random
 import numpy as np
-from typing import Callable, Iterable
+from typing import Iterable
 
-from funcs import *
-from plot  import *
+from .funcs import *
+from .animation import *
 
 
 class PSO_CUDA:
@@ -123,7 +123,7 @@ class PSO_CUDA:
         print("Init info:")
         print(f"Basic info : num = {self.n}, dim = {self.dim}, iterations = {self.iters}")
         if (verbose >= 2):
-            print(f"Global best point: {[round(float(x), 8) for x in self.global_best_x]}")
+            print(f"Global best point: [{" ".join([f"{float(x):.3e}" for x in self.global_best_x])}]")
         print(f"Global best fitness = {self.global_best_fit[0]}")
         print("=" * 100)
 
@@ -133,7 +133,7 @@ class PSO_CUDA:
         if (verbose >= 2): 
             self.d_global_best_x.copy_to_numpy(self.global_best_x)
             print(f"Inertia weight = {self.w}")
-            print(f"Global best point: {[round(float(x), 8) for x in self.global_best_x]}")
+            print(f"Global best point: [{" ".join([f"{float(x):.3e}" for x in self.global_best_x])}]")
         print(f"Global best fitness = {self.global_best_fit[0]}")
 
     def print_global_info(self, verbose: int) -> None:
@@ -142,7 +142,7 @@ class PSO_CUDA:
         print("=" * 100)
         print("Final result:")
         if verbose >= 2:
-            print(f"Global best point: {[round(float(x), 8) for x in self.global_best_x]}")
+            print(f"Global best point: [{" ".join([f"{float(x):.3e}" for x in self.global_best_x])}]")
         print(f"Global best fitness = {self.global_best_fit[0]}")
         print("=" * 100)
     
@@ -168,17 +168,17 @@ class PSO_CUDA:
     
 if __name__ == "__main__":
 
-    seed        = None
-    n_test      = 10
-    dim         = 1024
+    seed        = 0
+    n_test      = 1
+    dim         = 8
     n           = 1024
-    iters       = 1000
+    iters       = 200
     x_min       = -20
     x_max       = 20.
     v_max       = 5.
     is_make_ani = False
     markersize  = 4
-    verbose     = 0
+    verbose     = 2
     device      = cuPSO.Device.GPU
 
     if seed is not None:

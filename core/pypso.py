@@ -4,8 +4,8 @@ import random
 import numpy as np
 from typing import Callable, Iterable
 
-from funcs import *
-from plot  import *
+from .funcs import *
+from .animation import *
 
 
 class PSO:
@@ -72,7 +72,7 @@ class PSO:
         print("Init info:")
         print(f"Basic info : num = {self.n}, dim = {self.dim}, iterations = {self.iters}")
         if (verbose >= 2):
-            print(f"Global best point: {[round(float(x), 4) for x in self.global_best_x]}")
+            print(f"Global best point: [{" ".join([f"{float(x):.3e}" for x in self.global_best_x])}]")
         print(f"Global best fitness = {self.global_best_fit}")
         print("=" * 100)
     
@@ -80,14 +80,14 @@ class PSO:
         print("-" * 50 + f" {i} / {self.iters} " + "-" * 50)
         if (verbose >= 2): 
             print(f"Inertia weight = {self.w}")
-            print(f"Global best point: {[round(float(x), 4) for x in self.global_best_x]}")
+            print(f"Global best point: [{" ".join([f"{float(x):.3e}" for x in self.global_best_x])}]")
         print(f"Global best fitness = {self.global_best_fit}")
 
     def print_global_info(self, verbose: int) -> None:
         print("=" * 100)
         print("Final result:")
         if verbose >= 2:
-            print(f"Global best point: {[round(float(x), 4) for x in self.global_best_x]}")
+            print(f"Global best point: [{" ".join([f"{float(x):.3e}" for x in self.global_best_x])}]")
         print(f"Global best fitness = {self.global_best_fit}")
         print("=" * 100)
 
@@ -131,18 +131,18 @@ class PSO:
 
 if __name__ == "__main__":
 
-    seed        = None
-    n_test      = 10
+    seed        = 0
+    n_test      = 1
     func        = levy_func
-    dim         = 3 * 2**5
-    n           = dim * 2**5
-    iters       = 1000
+    dim         = 8
+    n           = 1024
+    iters       = 200
     x_min       = -20
     x_max       = 20.
     v_max       = 5.
     is_make_ani = False
     markersize  = 4
-    verbose     = 1
+    verbose     = 2
 
     if seed is not None:
         random.seed(seed)
