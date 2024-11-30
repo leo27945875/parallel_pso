@@ -11,7 +11,7 @@
 
 #define IS_TESTING                0
 #define IS_CHECK_CUDA_ERROR       1
-#define IS_CUDA_ALIGN_MALLOC      0
+#define IS_CUDA_ALIGN_MALLOC      1
 #define IS_GLOBAL_BEST_USE_ATOMIC 1
 
 // Error checking macro

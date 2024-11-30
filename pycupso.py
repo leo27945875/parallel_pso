@@ -169,9 +169,9 @@ class PSO_CUDA:
 if __name__ == "__main__":
 
     seed        = None
-    n_test      = 30
-    dim         = 260
-    n           = 100000
+    n_test      = 10
+    dim         = 1024
+    n           = 1024
     iters       = 1000
     x_min       = -20
     x_max       = 20.
