@@ -16,7 +16,7 @@ find_package(Python COMPONENTS Interpreter Development)
 find_package(pybind11 CONFIG REQUIRED)
 
 # Set include directories:
-file(GLOB_RECURSE proj_inc_dirs LIST_DIRECTORIES true ${CMAKE_CURRENT_SOURCE_DIR}/csrc/*/include)
+file(GLOB_RECURSE proj_inc_dirs LIST_DIRECTORIES true ${CMAKE_CURRENT_SOURCE_DIR}/csrc/**/include)
 set(inc_dirs ${proj_inc_dirs} ${CUDAToolkit_INCLUDE_DIRS})
 include_directories(${inc_dirs})
 
@@ -46,8 +46,8 @@ set(CMAKE_VERBOSE_MAKEFILE OFF)
 set(CMAKE_BUILD_TYPE "Release")
 
 # Find source code:
-file(GLOB_RECURSE cuda_src_list ${CMAKE_CURRENT_SOURCE_DIR}/csrc/**/*.cu)
-file(GLOB_RECURSE bind_src_list ${CMAKE_CURRENT_SOURCE_DIR}/csrc/bind.cpp)
+file(GLOB_RECURSE cuda_src_list ${CMAKE_CURRENT_SOURCE_DIR}/csrc/${CMAKE_PROJECT_NAME}/**/*.cu)
+file(GLOB_RECURSE bind_src_list ${CMAKE_CURRENT_SOURCE_DIR}/csrc/${CMAKE_PROJECT_NAME}/bind.cpp)
 message("CUDA Source files:\n  ${cuda_src_list}")
 message("C++ Source files:\n  ${bind_src_list}")
 
