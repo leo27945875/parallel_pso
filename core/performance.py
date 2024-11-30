@@ -6,7 +6,7 @@ import warnings
 
 warnings.filterwarnings("ignore")
 
-SAVE_PATH = "assets"
+SAVE_PATH = "assets/cuPSO"
 
 
 def exec_timer(timer: timeit.Timer, prefix: str, n_test: int) -> tuple[float, float]:

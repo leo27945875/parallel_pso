@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 
 plt.style.use("seaborn-v0_8")
 
-SAVE_PATH = "assets"
+SAVE_PATH = "assets/cuPSO"
 
 
 def plot_all(args: argparse.Namespace):
