@@ -26,6 +26,6 @@ cpu:
 gpu:
 	python -m core.pycupso
 perf:
-	python -m core ${c}
+	python -m core.performance ${c}
 plot:
 	python -m core.plot ${c}
