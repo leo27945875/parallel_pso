@@ -2,6 +2,7 @@
 
 #include "utils.cuh"
 
+#if not IS_CUDA_ALIGN_MALLOC
 void update_velocities_cuda(
     scalar_t       *vs_cuda_ptr, 
     scalar_t const *xs_cuda_ptr, 
@@ -16,6 +17,7 @@ void update_velocities_cuda(
     ssize_t         dim,
     cuda_rng_t     *rng_states_cuda_ptr
 );
+#else
 void update_velocities_cuda(
     scalar_t       *vs_cuda_ptr, 
     scalar_t const *xs_cuda_ptr, 
@@ -34,3 +36,4 @@ void update_velocities_cuda(
     ssize_t         rng_states_pitch,
     cuda_rng_t     *rng_states_cuda_ptr
 );
+#endif

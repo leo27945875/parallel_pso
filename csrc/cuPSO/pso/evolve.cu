@@ -4,9 +4,7 @@
 #include "utils.cuh"
 
 
-// =================================================== Kernels ===================================================
 #if IS_GLOBAL_BEST_USE_ATOMIC
-
 __global__ void update_best_fits_atomic_kernel(
     scalar_t const *x_fits,
     scalar_t       *local_best_fits,
@@ -48,52 +46,7 @@ __global__ void update_best_fits_atomic_kernel(
         unlock_kernel_mutex(mutex);
     }
 }
-__global__ void update_best_fits_atomic_aligned_kernel(
-    scalar_t const *x_fits,
-    scalar_t       *local_best_fits,
-    scalar_t       *global_best_fit,
-    ssize_t        *global_best_idx,
-    ssize_t         num,
-    ssize_t         x_fits_pitch,
-    ssize_t         local_best_fits_pitch,
-    cuda_mutex_t   *mutex
-){
-    __shared__ scalar_t global_best_fits_smem[BLOCK_DIM];
-    __shared__ ssize_t  global_best_idxs_smem[BLOCK_DIM];
-
-    ssize_t tid = threadIdx.x;
-    ssize_t idx = blockDim.x * blockIdx.x + tid;
-    global_best_fits_smem[tid] = cuda::std::numeric_limits<scalar_t>::max();
-    
-    for (ssize_t i = idx; i < num; i += gridDim.x * blockDim.x){
-        scalar_t x_fit = *ptr2d_at(x_fits, i, 0, x_fits_pitch);
-        *ptr2d_at(local_best_fits, i, 0, local_best_fits_pitch) = min(x_fit, *ptr2d_at(local_best_fits, i, 0, local_best_fits_pitch));
-        if (x_fit < global_best_fits_smem[tid]){
-            global_best_fits_smem[tid] = x_fit;
-            global_best_idxs_smem[tid] = i;
-        }
-    }
-    for (ssize_t k = blockDim.x >> 1; k > 0; k >>= 1){
-        __syncthreads();
-        if (tid < k){
-            if (global_best_fits_smem[tid + k] < global_best_fits_smem[tid]){
-                global_best_fits_smem[tid] = global_best_fits_smem[tid + k];
-                global_best_idxs_smem[tid] = global_best_idxs_smem[tid + k];
-            }
-        }
-    }
-    if (tid == 0){
-        lock_kernel_mutex(mutex);
-        if (global_best_fits_smem[0] < *global_best_fit){
-            *global_best_fit = global_best_fits_smem[0];
-            *global_best_idx = global_best_idxs_smem[0];
-        }
-        unlock_kernel_mutex(mutex);
-    }
-}
-
 #else
-
 __global__ void update_best_fits_reduce_kernel(
     scalar_t const *x_fits,
     scalar_t       *local_best_fits,
@@ -131,7 +84,6 @@ __global__ void update_best_fits_reduce_kernel(
         global_best_idxs[bid] = global_best_idxs_smem[0];
     }
 }
-
 __global__ void argmin_global_fits_reduce_kernel(
     scalar_t  const *global_best_fits,
     ssize_t   const *global_best_idxs,
@@ -167,9 +119,9 @@ __global__ void argmin_global_fits_reduce_kernel(
         *global_best_idx = global_best_idxs_smem[0];
     }
 }
-
 #endif
 
+#if not IS_CUDA_ALIGN_MALLOC
 __global__ void assign_local_best_xs_kernel(
     scalar_t const *xs,
     scalar_t const *x_fits,
@@ -188,6 +140,7 @@ __global__ void assign_local_best_xs_kernel(
     for (ssize_t i = idx; i < dim; i += gridDim.y * blockDim.y)
         local_best_xs[nid * dim + i] = xs[nid * dim + i];
 }
+#else
 __global__ void assign_local_best_xs_aligned_kernel(
     scalar_t const *xs,
     scalar_t const *x_fits,
@@ -208,9 +161,9 @@ __global__ void assign_local_best_xs_aligned_kernel(
     for (ssize_t i = idx; i < dim; i += gridDim.y * blockDim.y)
         *ptr2d_at(local_best_xs, nid, i, local_best_xs_pitch) = *ptr2d_at(xs, nid, i, xs_pitch);
 }
+#endif
 
 
-// =================================================== APIs ===================================================
 ssize_t update_best_fits_cuda(
     scalar_t const *x_fits_cuda_ptr,
     scalar_t       *local_best_fits_cuda_ptr,
@@ -255,7 +208,7 @@ ssize_t update_best_fits_cuda(
     cudaCheckErrors("Failed to free 'global_best_idx_cuda_ptr'.");
     return global_best_idx;
 }
-
+#if not IS_CUDA_ALIGN_MALLOC
 ssize_t update_bests_cuda(
     scalar_t const *xs_cuda_ptr,
     scalar_t const *x_fits_cuda_ptr,
@@ -280,6 +233,7 @@ ssize_t update_bests_cuda(
     cudaCheckErrors("Fail to copy global best x.");
     return global_best_idx;
 }
+#else
 ssize_t update_bests_cuda(
     scalar_t const *xs_cuda_ptr,
     scalar_t const *x_fits_cuda_ptr,
@@ -306,3 +260,4 @@ ssize_t update_bests_cuda(
     cudaCheckErrors("Fail to copy aligned global best x.");
     return global_best_idx;
 }
+#endif
