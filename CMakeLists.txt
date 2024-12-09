@@ -40,7 +40,7 @@ set(LIBRARY_OUTPUT_PATH ${package_install_dir})
 file(MAKE_DIRECTORY ${package_install_dir})
 file(WRITE ${package_install_dir}/__init__.py "from .cuPSO import *")
 
-# Compile settings:
+# Other compile settings:
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_VERBOSE_MAKEFILE OFF)
 set(CMAKE_BUILD_TYPE "Release")

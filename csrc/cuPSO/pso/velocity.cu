@@ -2,6 +2,7 @@
 #include "utils.cuh"
 
 
+#if not IS_CUDA_ALIGN_MALLOC
 __global__ void update_velocities_kernel(
     scalar_t       *vs, 
     scalar_t const *xs, 
@@ -37,46 +38,6 @@ __global__ void update_velocities_kernel(
         rng_states[nid * dim + i] = thread_rng_state;
     }
 }
-__global__ void update_velocities_aligned_kernel(
-    scalar_t       *vs, 
-    scalar_t const *xs, 
-    scalar_t const *local_best_xs, 
-    scalar_t const *global_best_x,
-    scalar_t        w,
-    scalar_t        c0,
-    scalar_t        c1,
-    ssize_t         num, 
-    ssize_t         dim,
-    ssize_t         vs_pitch,
-    ssize_t         xs_pitch,
-    ssize_t         local_best_xs_pitch,
-    ssize_t         rng_states_pitch,
-    cuda_rng_t     *rng_states
-){
-    ssize_t nid = blockIdx.x * blockDim.x + threadIdx.x;
-    ssize_t idx = blockIdx.y * blockDim.y + threadIdx.y;
-
-    if (nid >= num)
-        return;
-        
-    for (ssize_t i = idx; i < dim; i += gridDim.y * blockDim.y){
-        // Load data into local memory:
-        scalar_t v = *ptr2d_at(vs, nid, i, vs_pitch);
-        scalar_t x = *ptr2d_at(xs, nid, i, xs_pitch);
-        scalar_t lbest_x = *ptr2d_at(local_best_xs, nid, i, local_best_xs_pitch);
-        scalar_t gbest_x = global_best_x[i];
-
-        // Update velocities:
-        cuda_rng_t thread_rng_state = *ptr2d_at(rng_states, nid, i, rng_states_pitch);
-        *ptr2d_at(vs, nid, i, vs_pitch) = (
-            w * v + 
-            c0 * _get_curand_uniform<scalar_t>(&thread_rng_state) * (lbest_x - x) + 
-            c1 * _get_curand_uniform<scalar_t>(&thread_rng_state) * (gbest_x - x)
-        );
-        *ptr2d_at(rng_states, nid, i, rng_states_pitch) = thread_rng_state;
-    }
-}
-
 __global__ void update_velocities_with_sum_pow2_kernel(
     scalar_t       *vs, 
     scalar_t const *xs, 
@@ -132,6 +93,68 @@ __global__ void update_velocities_with_sum_pow2_kernel(
     }
     if (tidy == 0)
         atomicAdd(v_sum_pow2_res + nid, p_smem[tidx][0]);
+}
+__global__ void norm_clip_velocities_kernel(
+    scalar_t *vs, 
+    scalar_t *v_sum_pow2_res,
+    scalar_t  v_max,
+    ssize_t   num, 
+    ssize_t   dim
+){
+    ssize_t nid = blockIdx.x * blockDim.x + threadIdx.x;
+    ssize_t idx = blockIdx.y * blockDim.y + threadIdx.y;
+
+    if (nid >= num)
+        return;
+
+    scalar_t norm = sqrt(v_sum_pow2_res[nid]); // 'Broadcast' mechanism (see https://forums.developer.nvidia.com/t/accessing-same-global-memory-address-within-warps/66574)
+    if (norm <= v_max)
+        return;
+
+    scalar_t scale = v_max / norm;
+    for (ssize_t i = idx; i < dim; i += gridDim.y * blockDim.y){
+        vs[nid * dim + i] *= scale;
+    }
+}
+#else
+__global__ void update_velocities_aligned_kernel(
+    scalar_t       *vs, 
+    scalar_t const *xs, 
+    scalar_t const *local_best_xs, 
+    scalar_t const *global_best_x,
+    scalar_t        w,
+    scalar_t        c0,
+    scalar_t        c1,
+    ssize_t         num, 
+    ssize_t         dim,
+    ssize_t         vs_pitch,
+    ssize_t         xs_pitch,
+    ssize_t         local_best_xs_pitch,
+    ssize_t         rng_states_pitch,
+    cuda_rng_t     *rng_states
+){
+    ssize_t nid = blockIdx.x * blockDim.x + threadIdx.x;
+    ssize_t idx = blockIdx.y * blockDim.y + threadIdx.y;
+
+    if (nid >= num)
+        return;
+        
+    for (ssize_t i = idx; i < dim; i += gridDim.y * blockDim.y){
+        // Load data into local memory:
+        scalar_t v = *ptr2d_at(vs, nid, i, vs_pitch);
+        scalar_t x = *ptr2d_at(xs, nid, i, xs_pitch);
+        scalar_t lbest_x = *ptr2d_at(local_best_xs, nid, i, local_best_xs_pitch);
+        scalar_t gbest_x = global_best_x[i];
+
+        // Update velocities:
+        cuda_rng_t thread_rng_state = *ptr2d_at(rng_states, nid, i, rng_states_pitch);
+        *ptr2d_at(vs, nid, i, vs_pitch) = (
+            w * v + 
+            c0 * _get_curand_uniform<scalar_t>(&thread_rng_state) * (lbest_x - x) + 
+            c1 * _get_curand_uniform<scalar_t>(&thread_rng_state) * (gbest_x - x)
+        );
+        *ptr2d_at(rng_states, nid, i, rng_states_pitch) = thread_rng_state;
+    }
 }
 __global__ void update_velocities_with_sum_pow2_aligned_kernel(
     scalar_t       *vs, 
@@ -193,29 +216,6 @@ __global__ void update_velocities_with_sum_pow2_aligned_kernel(
     if (tidy == 0)
         atomicAdd(v_sum_pow2_res + nid, p_smem[tidx][0]);
 }
-
-__global__ void norm_clip_velocities_kernel(
-    scalar_t *vs, 
-    scalar_t *v_sum_pow2_res,
-    scalar_t  v_max,
-    ssize_t   num, 
-    ssize_t   dim
-){
-    ssize_t nid = blockIdx.x * blockDim.x + threadIdx.x;
-    ssize_t idx = blockIdx.y * blockDim.y + threadIdx.y;
-
-    if (nid >= num)
-        return;
-
-    scalar_t norm = sqrt(v_sum_pow2_res[nid]); // 'Broadcast' mechanism (see https://forums.developer.nvidia.com/t/accessing-same-global-memory-address-within-warps/66574)
-    if (norm <= v_max)
-        return;
-
-    scalar_t scale = v_max / norm;
-    for (ssize_t i = idx; i < dim; i += gridDim.y * blockDim.y){
-        vs[nid * dim + i] *= scale;
-    }
-}
 __global__ void norm_clip_velocities_aligned_kernel(
     scalar_t *vs, 
     scalar_t *v_sum_pow2_res,
@@ -239,8 +239,9 @@ __global__ void norm_clip_velocities_aligned_kernel(
         *ptr2d_at(vs, nid, i, vs_pitch) *= scale;
     }
 }
+#endif
 
-
+#if not IS_CUDA_ALIGN_MALLOC
 void update_velocities_cuda(
     scalar_t       *vs_cuda_ptr, 
     scalar_t const *xs_cuda_ptr, 
@@ -289,6 +290,7 @@ void update_velocities_cuda(
         }
     }
 }
+#else
 void update_velocities_cuda(
     scalar_t       *vs_cuda_ptr, 
     scalar_t const *xs_cuda_ptr, 
@@ -341,3 +343,4 @@ void update_velocities_cuda(
         }
     }
 }
+#endif

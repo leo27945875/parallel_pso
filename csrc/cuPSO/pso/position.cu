@@ -2,6 +2,7 @@
 #include "utils.cuh"
 
 
+#if not IS_CUDA_ALIGN_MALLOC
 __global__ void update_positions_kernel(
     scalar_t       *xs,
     scalar_t const *vs,
@@ -25,7 +26,7 @@ __global__ void update_positions_kernel(
             )
         );
 }
-
+#else
 __global__ void update_positions_aligned_kernel(
     scalar_t       *xs,
     scalar_t const *vs,
@@ -51,7 +52,9 @@ __global__ void update_positions_aligned_kernel(
             )
         );
 }
+#endif
 
+#if not IS_CUDA_ALIGN_MALLOC
 void update_positions_cuda(
     scalar_t       *xs_cuda_ptr,
     scalar_t const *vs_cuda_ptr,
@@ -67,6 +70,7 @@ void update_positions_cuda(
     );
     cudaCheckErrors("Failed to run 'update_positions_kernel'.");
 }
+#else
 void update_positions_cuda(
     scalar_t       *xs_cuda_ptr,
     scalar_t const *vs_cuda_ptr,
@@ -84,3 +88,4 @@ void update_positions_cuda(
     );
     cudaCheckErrors("Failed to run 'update_positions_aligned_kernel'.");
 }
+#endif
