@@ -39,11 +39,11 @@ def plot_(ax: Axes, name: str, device: str, is_all: bool, is_rate: bool, all_col
         if is_rate:
             ax.plot(dims, [ta / tm for ta, tm in zip(time_alls, time_mains)], color=all_color, linestyle="-")
         elif not is_all:
-            ax.plot(dims, time_mains, color=all_color, marker="o", linestyle="-", label=f"{device_name}")
+            ax.plot(dims, time_mains, color=all_color, marker="o", linestyle="-", label=f"{device_name.lower()}")
             ax.text(dims[-1] + xoffset, time_mains[-1], f"{round(time_mains[-1])}", fontsize=15, va="center", ha="left")
         else:
-            ax.plot(dims, time_alls, color=all_color, marker="o", linestyle="-", label=f"{device_name} all")
-            ax.plot(dims, time_mains, color=main_color, marker="o", linestyle="--", label=f"{device_name} main")
+            ax.plot(dims, time_alls, color=all_color, marker="o", linestyle="-", label=f"{device_name.lower()} all")
+            ax.plot(dims, time_mains, color=main_color, marker="o", linestyle="--", label=f"{device_name.lower()} main")
     else:
         raise RuntimeError(f"No {device.upper()} experiment data in the file.")
     
