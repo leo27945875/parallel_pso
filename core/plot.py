@@ -10,7 +10,7 @@ SAVE_PATH = "assets/cuPSO"
 
 def plot_all(args: argparse.Namespace):
 
-    assert not args.rate, "Not support rate figure for all-device comparison."
+    assert not args.rate, "Not support rate figure for both-device comparison."
 
     datafile = f"{SAVE_PATH}/{args.name}_ALL_record.json"
     with open(datafile, "r") as f:
@@ -126,8 +126,8 @@ def plot_gpu(args: argparse.Namespace):
 def main():
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("-d", "--device", type=str, default="all", help="Whether to use CPU or GPU to run PSO algorithm.", choices=["cpu", "gpu", "all"])
-    parser.add_argument("-n", "--name"  , type=str, default="Exp", help="The name of this experiment.")
+    parser.add_argument("-d", "--device", type=str, default="both", help="Whether to use CPU or GPU to run PSO algorithm.", choices=["cpu", "gpu", "both"])
+    parser.add_argument("-n", "--name"  , type=str, default="Exp" , help="The name of this experiment.")
     parser.add_argument("--all" , action="store_true" , help="Also plot setup times.")
     parser.add_argument("--logx", action="store_true" , help="Making x-axis log-scale.")
     parser.add_argument("--logy", action="store_true" , help="Making y-axis log-scale.")
