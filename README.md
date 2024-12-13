@@ -13,7 +13,11 @@
 
 > Note that we only use `Levy Function` to do our parallel experiments !
 
-### Scaling space dimensions (number of particles = 3000)
+### Scaling space dimensions
+
+* space dimension = 2^i - 1, for i=[1, 2, ..., 10]
+* number of particles = 3000
+* PSO iterations = 10
 
 Linear-scale x & y axes (without CPU data) : 
 
@@ -23,7 +27,11 @@ Log-scale x & y axes :
 
 ![](assets/Exp/Exp-dim_ALL_Times-logx-logy.png)
 
-## Scaling number of particles (space dimension = 3000)
+## Scaling number of particles
+
+* space dimension = 3000
+* number of particles = 2^i - 1, for i=[1, 2, ..., 10]
+* PSO iterations = 10
 
 Linear-scale x & y axes (without CPU data) :
 
@@ -34,6 +42,10 @@ Log-scale x & y axes :
 ![](assets/Exp/Exp-num_ALL_Times-logx-logy.png)
 
 ## Scaling number of threads
+
+* space dimension = 2^i - 1, for i=[1, 2, ..., 10]
+* number of particles = space dimension * 2^5
+* PSO iterations = 10
 
 ### OpemMP
 
