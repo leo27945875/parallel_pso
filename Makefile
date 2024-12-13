@@ -1,15 +1,15 @@
-LIB_NAME      := cuPSO
 GITHUB_BRANCH := cuda_version
+LIB_NAME      := ${l}
 COMMIT_MSG    := ${m}
 
 
-.PHONY: test clean stubs cm push cpu gpu perf plot
+.PHONY: test clean stubs cm push cpu gpu omp pthread perf_number plot_number scale
 
 test:
 	python -m unittest
 
 clean:
-	rm -rf build/* ${LIB_NAME}/${LIB_NAME}$(shell python3-config --extension-suffix) ${LIB_NAME}/lib${LIB_NAME}.a
+	rm -rf build/* */*$(shell python3-config --extension-suffix) */*.a
 
 stubs:
 	PYTHONPATH=./ pybind11-stubgen ${LIB_NAME}
@@ -25,7 +25,17 @@ cpu:
 	python -m core.pypso
 gpu:
 	python -m core.pycupso
-perf:
-	python -m core.performance ${c}
-plot:
-	python -m core.plot ${c}
+omp:
+	python -m core.pyomppso
+pthread:
+	python -m core.pypthreadpso
+
+perf_number:
+	python -m core.perf_number ${c}
+plot_number:
+	python -m core.plot_number ${c}
+
+perf_scale:
+	python -m core.perf_scale ${c}
+plot_scale:
+	python -m core.plot_scale ${c}
