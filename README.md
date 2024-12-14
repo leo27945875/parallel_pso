@@ -27,6 +27,8 @@ Log-scale x & y axes :
 
 ![](assets/Exp/Exp-dim_ALL_Times-logx-logy.png)
 
+The leftmost part of the figures above represents the `overhead` of each device or framework. When there are a large number of particles in a low-dimensional space, the PSO algorithm converges quickly, reducing the frequency of local and global best updates.
+
 ## Scaling number of particles
 
 * space dimension = 3000
@@ -40,6 +42,8 @@ Linear-scale x & y axes (without CPU data) :
 Log-scale x & y axes :
 
 ![](assets/Exp/Exp-num_ALL_Times-logx-logy.png)
+
+The overhead issue is not obvious here because there are only few particles in a high-dimensional space, which means we need a large number of iterations to let the PSO converge.
 
 ## Scaling number of threads
 
@@ -60,9 +64,12 @@ Log-scale x & y axes :
 ![](assets/Scl/PTHREAD_Scaling_Curves-logx-logy.png)
 
 
+We can see that the overhead of pthread for launching threads is higher than OpenMP.
+
+
 ## CUDA Experiments
 
-Change the shape of the thread blocks and see the difference of performance.
+Adjust the shape of the thread blocks and observe the performance differences.
 
 * space dimension = 1024 
 * number of particles = 1024 
@@ -80,6 +87,8 @@ Change the shape of the thread blocks and see the difference of performance.
 | 2*128  |  0.1980450333406528 |
 | 1*256  |  0.19917888169487316 |
 
+According to the table above, we can see that when block shape = (1, 256) or (2, 128), the cuPSO gets the best performance. This is due to the `memory coalescing` technique.
+
 | Block Shape | Exec Time (s) |
 |  ----  | ----  |
 | 1*64   |  0.2076006976266702 |
@@ -88,4 +97,5 @@ Change the shape of the thread blocks and see the difference of performance.
 | 1*512  |  0.20139076318591834 |
 | 1*1024 |  0.21060395787159603 |
 
-We can see that when block shape = (1, 256) or (2, 128), the cuPSO gets the best performance.
+The more number of threads in the blocks, the lower parallelism the algorithm gets. 
+But when using too much threads in the blocks, there are no enough local memory & register resources in the stream-multiprocessors (SMs).
