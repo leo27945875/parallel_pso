@@ -199,7 +199,7 @@ if __name__ == "__main__":
     if is_make_ani:
         assert dim == 2
         fig, ax, surf, line = plot_func(pso.func, pso.xs, x_min, x_max, markersize=markersize, is_show=False)
-        make_animation(pso.step, iters, fig, line, verbose, save_path=f"assets/cuPSO_{pso.func.__name__}--{n=}_{iters=}.gif", fps=25)
+        make_animation(pso.step, iters, fig, line, verbose, save_path=f"assets/_cuPSO_{pso.func.__name__}--{n=}_{iters=}.gif", fps=15)
     else:
         t = timeit.timeit(lambda: pso.run(verbose), number=n_test) / n_test
         print(f"Total time = {t}(s)")

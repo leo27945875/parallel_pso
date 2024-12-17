@@ -1,5 +1,7 @@
 # Parallel implementations of the Particle Swarm Optimization (PSO) algorithm
 
+We implement the PSO algorithm with numpy and parallelize it with `pthread`, `OpenMP` & `CUDA C++` combined with [pybind11](https://github.com/pybind/pybind11).
+
 ### Levy function:
 ![](assets/_PSO_levy_func.gif)
 
