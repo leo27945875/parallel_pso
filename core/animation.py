@@ -41,7 +41,7 @@ def plot_func(func: Callable[[np.ndarray], float], points: np.ndarray | None = N
     return fig, ax, surf, line
 
 
-def make_animation(animate_func: Callable[[int], Iterable[Artist]], iters: int, fig: Figure, line: Artist, verbose: int = 1, save_path: str = "assets/PSO.gif") -> None:
+def make_animation(animate_func: Callable[[int], Iterable[Artist]], iters: int, fig: Figure, line: Artist, verbose: int = 1, save_path: str = "assets/PSO.gif", fps: int = 15) -> None:
     ani = animation.FuncAnimation(fig, animate_func, iters, fargs=(verbose, line), interval=100)
-    writer = animation.PillowWriter(fps=15, metadata=dict(artist='Me'), bitrate=1800)
+    writer = animation.PillowWriter(fps=fps, metadata=dict(artist='Me'), bitrate=1800)
     ani.save(save_path, writer=writer)

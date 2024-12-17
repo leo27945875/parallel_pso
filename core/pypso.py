@@ -134,13 +134,13 @@ if __name__ == "__main__":
     func        = levy_func
     seed        = 0
     n_test      = 1
-    dim         = 8
-    n           = 1024
-    iters       = 200
+    dim         = 2
+    n           = 64
+    iters       = 50
     x_min       = -20
     x_max       = 20.
-    v_max       = 5.
-    is_make_ani = False
+    v_max       = 1.
+    is_make_ani = True
     markersize  = 4
     verbose     = 2
 
@@ -164,7 +164,7 @@ if __name__ == "__main__":
     if is_make_ani:
         assert dim == 2
         fig, ax, surf, line = plot_func(func, pso.xs, x_min, x_max, markersize=markersize, is_show=False)
-        make_animation(pso.step, iters, fig, line, verbose, save_path=f"assets/PSO_{func.__name__}--{n=}_{iters=}.gif")
+        make_animation(pso.step, iters, fig, line, verbose, save_path=f"assets/PSO_{func.__name__}--{n=}_{iters=}.gif", fps=1)
     else:
         t = timeit.timeit(lambda: pso.run(verbose), number=n_test) / n_test
         print(f"Total time = {t}(s)")

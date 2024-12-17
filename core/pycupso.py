@@ -168,17 +168,17 @@ class PSO_CUDA:
     
 if __name__ == "__main__":
 
-    seed        = 0
-    n_test      = 30
-    dim         = 1024
-    n           = 1024
-    iters       = 1000
+    seed        = None
+    n_test      = 1
+    dim         = 2
+    n           = 64
+    iters       = 50
     x_min       = -20
     x_max       = 20.
-    v_max       = 5.
-    is_make_ani = False
+    v_max       = 1.
+    is_make_ani = True
     markersize  = 4
-    verbose     = 0
+    verbose     = 2
     device      = cuPSO.Device.GPU
 
     if seed is not None:
@@ -199,7 +199,7 @@ if __name__ == "__main__":
     if is_make_ani:
         assert dim == 2
         fig, ax, surf, line = plot_func(pso.func, pso.xs, x_min, x_max, markersize=markersize, is_show=False)
-        make_animation(pso.step, iters, fig, line, verbose, save_path=f"assets/cuPSO_{pso.func.__name__}--{n=}_{iters=}.gif")
+        make_animation(pso.step, iters, fig, line, verbose, save_path=f"assets/cuPSO_{pso.func.__name__}--{n=}_{iters=}.gif", fps=25)
     else:
         t = timeit.timeit(lambda: pso.run(verbose), number=n_test) / n_test
         print(f"Total time = {t}(s)")

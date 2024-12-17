@@ -111,13 +111,13 @@ if __name__ == "__main__":
     seed        = None
     n_thread    = 4
     n_test      = 30
-    dim         = 8
-    n           = 1024
-    iters       = 200
+    dim         = 2
+    n           = 64
+    iters       = 50
     x_min       = -10.
     x_max       = 10.
-    v_max       = 5.
-    is_make_ani = False
+    v_max       = 1.
+    is_make_ani = True
     markersize  = 4
     verbose     = 2
 
