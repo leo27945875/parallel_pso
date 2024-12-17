@@ -1,4 +1,4 @@
-GITHUB_BRANCH := cuda_version
+GITHUB_BRANCH := ${b}
 LIB_NAME      := ${l}
 COMMIT_MSG    := ${m}
 
