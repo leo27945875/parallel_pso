@@ -181,4 +181,4 @@ According to the table above, we can see that when block shape = (1, 256) or (2,
 | 1*512  |  0.20139076318591834 |
 | 1*1024 |  0.21060395787159603 |
 
-The fewer threads in the blocks, the lower the performance achieved by the algorithm (due to the atomic operations and memory coalescing issues). But when using too much threads in the blocks, there are no enough local memory & register resources in the stream-multiprocessors (SMs).
+The fewer threads in the blocks, the lower the performance achieved by the algorithm due to the memory coalescing (and perhapes the parallelism) issue(s). But when using too much threads in the blocks, there are no enough local memory & register resources in the stream-multiprocessors (SMs).
