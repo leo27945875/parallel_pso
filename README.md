@@ -83,27 +83,10 @@ make plot_scale c="-n Test -d pthread"  # plot curves of pthread impl
 
 2. Recompile the project. (see [Build packages](#build-packages))
 
-3. Copy and replace the following lines of code to `./core/pycupso.py` (line 171~182).
-
-```python
-    seed        = 0
-    is_make_ani = False
-    dim         = 1024
-    n           = 1024
-    iters       = 1000
-    x_min       = -20
-    x_max       = 20.
-    v_max       = 1.
-    markersize  = 4
-    n_test      = 10
-    verbose     = 0
-    device      = cuPSO.Device.GPU
-```
-
-4. Run the testing code.
+3. Run the testing code.
 
 ```bash
-make gpu
+make perf_cuda
 ```
 
 ## Parallel Experiments
