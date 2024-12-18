@@ -11,6 +11,68 @@ We implement the PSO algorithm with numpy and parallelize it with `pthread`, `Op
 ### Rosenbrock function:
 ![](assets/_PSO_rosenbrock_func.gif)
 
+## Usage
+
+### Build packages
+
+```
+mkdir build
+cd build
+cmake ..
+make -j4
+cd ..
+```
+
+### Make animations
+
+```
+make cpu      # Make CPU impl animation
+make gpu      # Make GPU impl animation
+make omp      # Make OpenMP impl animation
+make pthread  # Make pthread impl animation
+```
+
+### Test performances
+
+* Scaling space dimensions :
+```bash
+make perf_number c="-n Test -t dim -d cpu"      # test CPU impl performance
+make perf_number c="-n Test -t dim -d gpu"      # test GPU impl performance
+make perf_number c="-n Test -t dim -d omp"      # test OpenMP impl performance
+make perf_number c="-n Test -t dim -d pthread"  # test pthread impl performance
+
+make plot_number c="-n Test -t dim -d every"                      # plot curves of all impls with out CPU one.
+make plot_number c="-n Test -t dim -d every --logx --logy --cpu"  # plot curves of all impls in log-scale.
+```
+
+* Scaling number of particles :
+```bash
+make perf_number c="-n Test -t num -d cpu"      # test CPU impl performance
+make perf_number c="-n Test -t num -d gpu"      # test GPU impl performance
+make perf_number c="-n Test -t num -d omp"      # test OpenMP impl performance
+make perf_number c="-n Test -t num -d pthread"  # test pthread impl performance
+
+make plot_number c="-n Test -t num -d every"                      # plot curves of all impls with out CPU one.
+make plot_number c="-n Test -t num -d every --logx --logy --cpu"  # plot curves of all impls in log-scale.
+```
+
+* Scaling number of threads of OpenMP and pthread :
+```bash
+make perf_scale c="-n Test -d omp"      # test OpenMP impl performance
+make perf_scale c="-n Test -d pthread"  # test OpenMP impl performance
+
+make plot_scale c="-n Test -d omp"      # plot curves of OpenMP impl
+make plot_scale c="-n Test -d pthread"  # plot curves of pthread impl
+```
+
+* CUDA Experiments : 
+
+    Adjust the definitions of `BLOCK_DIM_X` and `BLOCK_DIM_Y` in `./csrc/cuPSO/utils/include/utils.cuh` (line 8 & 9) and then recompile the project :
+```cpp
+#define BLOCK_DIM_X 1L    // related to the number of particles
+#define BLOCK_DIM_Y 256L  // related to the space dimensions
+```
+
 ## Parallel Experiments
 
 > Note that we only use `Levy Function` to do our parallel experiments !
