@@ -89,7 +89,7 @@ make plot_scale c="-n Test -d pthread"  # plot curves of pthread impl
 make perf_cuda
 ```
 
-## Parallel Experiments
+## Experiments
 
 > Note that we only use `Levy Function` to do our parallel experiments !
 
