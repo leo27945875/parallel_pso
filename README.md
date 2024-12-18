@@ -93,6 +93,8 @@ make perf_cuda
 
 > Note that we only use `Levy Function` to do our experiments on parallelization !
 
+> You will see that the CPU implementation takes significantly more time to execute, as the serial version is implemented purely in Python.
+
 ### Scaling space dimensions
 
 * space dimension = 2^i - 1, for i=[1, 2, ..., 10]
@@ -106,8 +108,6 @@ Linear-scale x & y axes (without CPU data) :
 Log-scale x & y axes :
 
 ![](assets/Exp/Exp-dim_ALL_Times-logx-logy.png)
-
-We can see that the CPU implementation takes significantly more time to execute, as the serial PSO algorithm is implemented purely in Python.
 
 And the leftmost part of the figures above is more affected by the `overhead` of each device or framework. When there are a large number of particles in a low-dimensional space, the PSO algorithm converges quickly, reducing the frequency of local and global best updates.
 
