@@ -6,7 +6,7 @@
 
 #define MAX_NUM_BLOCK_1D 128L
 #define BLOCK_DIM_X      1L
-#define BLOCK_DIM_Y      4L
+#define BLOCK_DIM_Y      256L
 #define BLOCK_DIM        (BLOCK_DIM_X * BLOCK_DIM_Y)
 
 #define IS_TESTING                0
