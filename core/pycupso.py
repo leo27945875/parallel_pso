@@ -168,16 +168,16 @@ class PSO_CUDA:
     
 if __name__ == "__main__":
 
-    seed        = None
-    n_test      = 1
+    seed        = 0
+    is_make_ani = True
     dim         = 2
     n           = 64
     iters       = 50
     x_min       = -20
     x_max       = 20.
     v_max       = 1.
-    is_make_ani = True
     markersize  = 4
+    n_test      = 10
     verbose     = 2
     device      = cuPSO.Device.GPU
 

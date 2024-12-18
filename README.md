@@ -15,7 +15,7 @@ We implement the PSO algorithm with numpy and parallelize it with `pthread`, `Op
 
 ### Build packages
 
-```
+```bash
 mkdir build
 cd build
 cmake ..
@@ -25,7 +25,7 @@ cd ..
 
 ### Make animations
 
-```
+```bash
 make cpu      # Make CPU impl animation
 make gpu      # Make GPU impl animation
 make omp      # Make OpenMP impl animation
@@ -67,10 +67,36 @@ make plot_scale c="-n Test -d pthread"  # plot curves of pthread impl
 
 * CUDA Experiments : 
 
-    Adjust the definitions of `BLOCK_DIM_X` and `BLOCK_DIM_Y` in `./csrc/cuPSO/utils/include/utils.cuh` (line 8 & 9) and then recompile the project :
+1. Adjust the definitions of `BLOCK_DIM_X` and `BLOCK_DIM_Y` in `./csrc/cuPSO/utils/include/utils.cuh` (line 8 & 9).
+
 ```cpp
 #define BLOCK_DIM_X 1L    // related to the number of particles
 #define BLOCK_DIM_Y 256L  // related to the space dimensions
+```
+
+2. Recompile the project. (see [Build packages](#build-packages))
+
+3. Copy and replace the following lines of code to `./core/pycupso.py` (line 171~182).
+
+```python
+    seed        = 0
+    is_make_ani = False
+    dim         = 1024
+    n           = 1024
+    iters       = 1000
+    x_min       = -20
+    x_max       = 20.
+    v_max       = 1.
+    markersize  = 4
+    n_test      = 10
+    verbose     = 0
+    device      = cuPSO.Device.GPU
+```
+
+4. Run the testing code.
+
+```bash
+make gpu
 ```
 
 ## Parallel Experiments

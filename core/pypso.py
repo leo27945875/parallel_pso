@@ -133,15 +133,15 @@ if __name__ == "__main__":
 
     func        = levy_func
     seed        = 0
-    n_test      = 1
+    is_make_ani = True
     dim         = 2
     n           = 64
     iters       = 50
     x_min       = -20
     x_max       = 20.
     v_max       = 1.
-    is_make_ani = True
     markersize  = 4
+    n_test      = 10
     verbose     = 2
 
     if seed is not None:

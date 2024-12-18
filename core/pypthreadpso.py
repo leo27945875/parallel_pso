@@ -109,16 +109,16 @@ if __name__ == "__main__":
 
     func        = levy_func
     seed        = None
+    is_make_ani = True
     n_thread    = 4
-    n_test      = 1
     dim         = 2
     n           = 64
     iters       = 50
     x_min       = -10.
     x_max       = 10.
     v_max       = 1.
-    is_make_ani = True
     markersize  = 4
+    n_test      = 10
     verbose     = 2
 
     if seed is not None:
