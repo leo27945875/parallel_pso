@@ -13,6 +13,13 @@ We implement the PSO algorithm with numpy and parallelize it with `pthread`, `Op
 
 ## Usage
 
+### Clone this repo
+
+```bash
+git clone git@github.com:leo27945875/parallel_pso.git
+cd parallel_pso
+```
+
 ### Build packages
 
 ```bash
