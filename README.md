@@ -91,7 +91,7 @@ make perf_cuda
 
 ## Experiments
 
-> Note that we only use `Levy Function` to do our parallel experiments !
+> Note that we only use `Levy Function` to do our experiments on parallelization !
 
 ### Scaling space dimensions
 
