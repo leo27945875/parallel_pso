@@ -172,11 +172,13 @@ According to the table above, we can see that when block shape = (1, 256) or (2,
 | Block Shape | Exec Time (s) |
 |  ----  | ----  |
 | 1*4    |  0.8009999251924456 |
+| 1*8    |  0.569435287763675 |
+| 1*16   |  0.33047667148833476 |
+| 1*32   |  0.22315609737609823 |
 | 1*64   |  0.2076006976266702 |
 | 1*128  |  0.19953426771486799 |
 | 1*256  |  0.19917888169487316 |
 | 1*512  |  0.20139076318591834 |
 | 1*1024 |  0.21060395787159603 |
 
-The fewer threads in the blocks, the lower the parallelism achieved by the algorithm (due to the atomic operations).
-But when using too much threads in the blocks, there are no enough local memory & register resources in the stream-multiprocessors (SMs).
+The fewer threads in the blocks, the lower the parallelism achieved by the algorithm (due to the atomic operations and memory coalescing issues). But when using too much threads in the blocks, there are no enough local memory & register resources in the stream-multiprocessors (SMs).
